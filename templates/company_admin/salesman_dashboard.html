@@ -1,0 +1,223 @@
+{% extends './base.html' %}
+{% block content %}
+
+<style>
+    body {
+        background: #f8fafc;
+    }
+    .card {
+        border: none;
+        border-radius: 16px;
+        background: #ffffff;
+        box-shadow: 0 4px 18px rgba(31, 38, 135, 0.07);
+        position: relative;
+        overflow: hidden;
+    }
+    .card-title {
+        color: #000000;
+        font-weight: 600;
+        font-size: 1.15rem;
+        margin-left: 58px;
+    }
+    .h3 {
+        color: #000000;
+        font-weight: bold;
+        font-size: 2rem;
+        margin-left: 58px;
+    }
+    .icon-shape {
+        position: absolute;
+        top: 18px;
+        left: 18px;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        font-size: 1.5rem;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #6c63ff;
+        color: #fff;
+        box-shadow: 0 2px 8px rgba(31, 38, 135, 0.07);
+    }
+    .bg-tertiary { background: #6c63ff !important; }
+    .bg-primary { background: #007bff !important; }
+    .bg-warning { background: #ffc107 !important; }
+    h2 {
+        color: #a97c1a;
+        font-family: 'Merriweather', serif;
+        font-weight: 700;
+        margin-bottom: 1.5rem;
+    }
+    h4 {
+        color: #6c63ff;
+        font-weight: 600;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+    }
+    .list-group-item {
+        background: #ffffff;
+        border: none;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        box-shadow: 0 2px 8px rgba(31, 38, 135, 0.07);
+    }
+    .list-group-item strong {
+        color: #7c1a1a;
+    }
+    .list-group-item small {
+        color: #6c757d;
+    }
+    .text-muted {
+        color: #b0b0b0 !important;
+    }
+    .chart-container {
+        background: #ffffff;
+        border-radius: 16px;
+        box-shadow: 0 2px 8px rgba(31, 38, 135, 0.07);
+        padding: 1rem;
+        margin-bottom: 2rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+    }
+    #ordersPieChart {
+        max-width: 320px;
+        max-height: 320px;
+        margin: 0 auto;
+        display: block;
+    }
+    #revenueBarChart {
+        width: 100% !important;
+        height: 100% !important;
+        display: block;
+    }
+</style>
+
+<div class="container mt-4">
+    <h2>Welcome, {{ current_user.first_name }}!</h2>
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="icon-shape bg-tertiary">
+                    <i class="fas fa-calendar-day"></i>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Today's Orders</h5>
+                    <span class="h3">{{ today_orders }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="icon-shape bg-primary">
+                    <i class="fas fa-shopping-cart"></i>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Total Orders</h5>
+                    <span class="h3">{{ total_orders }}</span>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm">
+                <div class="icon-shape bg-warning">
+                    <i class="fas fa-rupee-sign"></i>
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">Total Revenue</h5>
+                    <span class="h3">₹{{ total_revenue }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Static Charts Section -->
+    <div class="row">
+        <div class="col-md-6">
+            <div class="chart-container mb-4">
+                <h5 class="card-title mb-3 text-center">Order Status Distribution</h5>
+                <canvas id="ordersPieChart"></canvas>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="chart-container mb-4">
+                <h5 class="card-title mb-3 text-center">Monthly Revenue (Static)</h5>
+                <canvas id="revenueBarChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <h4>Top 5 Customers</h4>
+    <div class="list-group mb-4">
+        {% for c in top_customers_list %}
+        <div class="list-group-item d-flex justify-content-between align-items-center">
+            <div>
+                <strong>{{ c.name }} ({{ c.shop_name }} - {{ c.shop_city }})</strong>
+            </div>
+            <div>
+                ₹{{ c.revenue }}<br>
+                <small>{{ c.orders }} Orders</small>
+            </div>
+        </div>
+        {% empty %}
+        <div class="text-center text-muted">No customer data available</div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Pie Chart with simple, balanced colors
+    const ordersPieCtx = document.getElementById('ordersPieChart').getContext('2d');
+    new Chart(ordersPieCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Delivered', 'Pending', 'Cancelled'],
+            datasets: [{
+                data: [60, 30, 10],
+                backgroundColor: [
+                    '#FF6384', 
+                    '#36A2EB', 
+                    '#FFCE56'  
+                ],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { position: 'bottom' }
+            }
+        }
+    });
+
+    // Bar Chart with simple, balanced colors
+    const revenueBarCtx = document.getElementById('revenueBarChart').getContext('2d');
+    new Chart(revenueBarCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            datasets: [{
+                label: 'Revenue (₹)',
+                data: [12000, 15000, 11000, 18000, 17000, 20000],
+                backgroundColor: ['#36A2EB'],
+                borderWidth: 0
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false }
+            },
+            scales: {
+                y: { beginAtZero: true }
+            }
+        }
+    });
+</script>
+{% endblock %}
