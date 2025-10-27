@@ -98,110 +98,137 @@
                 <h2 class="text-center mb-4 gradient-title">{% if edit_product %}Edit{% else %}Add{% endif %} Product</h2>
 
                 <form method="post" enctype="multipart/form-data"
-      action="{% if edit_product %}{% url 'edit_product' edit_product.id %}{% else %}{% url 'add_product' %}{% endif %}">
-    {% csrf_token %}
-    <div class="row g-3">
+                    action="{% if edit_product %}{% url 'edit_product' edit_product.id %}{% else %}{% url 'add_product' %}{% endif %}">
 
-        <!-- Category -->
-        <div class="col-md-6">
-            <label for="category" class="form-label">Category</label>
-            <select id="category" name="category" class="form-select" required>
-                <option value="" disabled {% if not edit_product %}selected{% endif %} hidden>--Select Category--</option>
-                {% for category in categories %}
-                <option value="{{ category.id }}" {% if edit_product and edit_product.category.id == category.id %}selected{% endif %}>
-                    {{ category.name }}
-                </option>
-                {% endfor %}
-            </select>
-        </div>
+                    {% csrf_token %}
+                    <div class="row g-3">
 
-        <!-- Brand Name -->
-        <div class="col-md-6">
-            <label for="brand_name" class="form-label">Brand Name</label>
-            <select id="brand_name" name="brand_name" class="form-control">
-                <option value="" disabled {% if not edit_product %}selected{% endif %} hidden>--Please Select Brand--</option>
-                <option value="Dell" {% if edit_product and edit_product.brand_name == "Dell" %}selected{% endif %}>Dell</option>
-                <option value="Lenovo" {% if edit_product and edit_product.brand_name == "Lenovo" %}selected{% endif %}>Lenovo</option>
-                <option value="HP" {% if edit_product and edit_product.brand_name == "HP" %}selected{% endif %}>HP</option>
-                <option value="Apple" {% if edit_product and edit_product.brand_name == "Apple" %}selected{% endif %}>Apple</option>
-            </select>
-        </div>
+                        <div class="col-md-4">
+                            <label for="category" class="form-label">Category*</label>
+                            <select id="category" name="category" class="form-select" required>
+                                <option value="" disabled {% if not edit_product %}selected{% endif %} hidden>--Select Category--</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}" {% if edit_product and edit_product.category.id == category.id %}selected{% endif %}>
+                                    {{ category.name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-        <!-- Model Name -->
-        <div class="col-md-6">
-            <label for="model_name" class="form-label">Model Name</label>
-            <input type="text" id="model_name" name="model_name" class="form-control"
-                   value="{{ edit_product.model_name|default:'' }}" placeholder="Enter model name">
-        </div>
+                        <!-- Product Type -->
+                        <div class="col-md-4">
+                            <label for="product_type" class="form-label">Product Type*</label>
+                            <select id="product_type" name="product_type" class="form-select" required>
+                                <option value="" disabled {% if not edit_product %}selected{% endif %} hidden>--Select Product Type--</option>
+                                {% for type_value, type_label in product_types %}
+                                <option value="{{ type_value }}" {% if edit_product and edit_product.product_type == type_value %}selected{% endif %}>
+                                    {{ type_label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-        <!-- Product Name -->
-        <div class="col-md-6">
-            <label for="name" class="form-label">Product Name</label>
-            <input type="text" id="name" name="name" class="form-control" required
-                   value="{{ edit_product.name|default:'' }}" placeholder="Enter product name">
-        </div>
+                        <!-- Brand Name -->
+                        <div class="col-md-4">
+                            <label for="brand_name" class="form-label">Brand Name</label>
+                            <select id="brand_name" name="brand_name" class="form-select">
+                                <option value="" disabled {% if not edit_product %}selected{% endif %} hidden>--Select Brand--</option>
+                                {% for brand_value, brand_label in brand_choices.items %}
+                                <option value="{{ brand_value }}" {% if edit_product and edit_product.brand_name == brand_value %}selected{% endif %}>
+                                    {{ brand_label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
 
-        <!-- Description -->
-        <div class="col-md-12">
-            <label for="description" class="form-label">Specification</label>
-            <textarea id="description" name="description" class="form-control" rows="2"
-                      placeholder="Enter product description">{{ edit_product.description|default:'' }}</textarea>
-        </div>
+                        <!-- Model Name -->
+                        <div class="col-md-6">
+                            <label for="model_name" class="form-label">Model Name</label>
+                            <input type="text" id="model_name" name="model_name" class="form-control"
+                                value="{{ edit_product.model_name|default:'' }}" placeholder="Enter model name">
+                        </div>
 
-        <!-- Unit -->
-        <div class="col-md-4">
-            <label for="unit" class="form-label">Unit</label>
-            <select id="unit" name="unit" class="form-select" required>
-                <option value="" disabled {% if not edit_product %}selected{% endif %} hidden>Select unit</option>
-                <option value="Pieces" {% if edit_product and edit_product.unit == "Pieces" %}selected{% endif %}>Pieces</option>
-            </select>
-        </div>
+                        <!-- Product Name -->
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Product Name</label>
+                            <input type="text" id="name" name="name" class="form-control" required
+                                value="{{ edit_product.name|default:'' }}" placeholder="Enter product name">
+                        </div>
 
-        <!-- HSN Code -->
-        <div class="col-md-4">
-            <label for="hsn_code" class="form-label">HSN Code</label>
-            <input type="text" id="hsn_code" name="hsn_code" class="form-control"
-                   value="{{ edit_product.hsn_code|default:'' }}" placeholder="Enter HSN code">
-        </div>
+                        <!-- Description -->
+                        <div class="col-md-12">
+                            <label for="description" class="form-label">Specification</label>
+                            <textarea id="description" name="description" class="form-control" rows="2"
+                                    placeholder="Enter product description">{{ edit_product.description|default:'' }}</textarea>
+                        </div>
 
-        <!-- GST Percentage -->
-        <div class="col-md-4">
-            <label for="gstpercentage" class="form-label">GST %</label>
-            <select id="gstpercentage" name="gstpercentage" class="form-control" required>
-                <option value="" disabled {% if not edit_product %}selected{% endif %} hidden>--Select GST--</option>
-                <option value="0" {% if edit_product and edit_product.gstpercentage == 0 %}selected{% endif %}>0%</option>
-                <option value="0.25" {% if edit_product and edit_product.gstpercentage == 0.25 %}selected{% endif %}>0.25%</option>
-                <option value="3" {% if edit_product and edit_product.gstpercentage == 3 %}selected{% endif %}>3%</option>
-                <option value="5" {% if edit_product and edit_product.gstpercentage == 5 %}selected{% endif %}>5%</option>
-                <option value="12" {% if edit_product and edit_product.gstpercentage == 12 %}selected{% endif %}>12%</option>
-                <option value="18" {% if edit_product and edit_product.gstpercentage == 18 %}selected{% endif %}>18%</option>
-                <option value="28" {% if edit_product and edit_product.gstpercentage == 28 %}selected{% endif %}>28%</option>
-            </select>
-        </div>
+                        <!-- Unit -->
+                        <div class="col-md-4">
+                            <label for="unit" class="form-label">Unit</label>
+                            <select id="unit" name="unit" class="form-select" required>
+                                <option value="" disabled {% if not edit_product %}selected{% endif %} hidden>Select unit</option>
+                                <option value="Pieces" {% if edit_product and edit_product.unit == "Pieces" %}selected{% endif %}>Pieces</option>
+                            </select>
+                        </div>
 
-        <!-- Product Picture -->
-        <div class="col-md-6">
-            <label for="product_picture" class="form-label">Product Picture</label>
-            <input type="file" id="product_picture" name="product_picture" class="form-control" accept="image/*">
+                        <!-- HSN Code -->
+                        <div class="col-md-4">
+                            <label for="hsn_code" class="form-label">HSN Code</label>
+                            <input type="text" id="hsn_code" name="hsn_code" class="form-control"
+                                value="{{ edit_product.hsn_code|default:'' }}" placeholder="Enter HSN code">
+                        </div>
 
-            {% if edit_product and edit_product.product_picture %}
-                <div class="mt-2">
-                    <p class="mb-1">Current Picture:</p>
-                    <img src="{{ edit_product.product_picture.url }}" alt="Product Picture"
-                         class="img-thumbnail" style="max-height:150px;">
-                </div>
-            {% endif %}
-        </div>
+                        <!-- GST Percentage -->
+                        <div class="col-md-4">
+                            <label for="gstpercentage" class="form-label">GST %</label>
+                            <select id="gstpercentage" name="gstpercentage" class="form-control" required>
+                                <option value="" disabled {% if not edit_product %}selected{% endif %} hidden>--Select GST--</option>
+                                <option value="0" {% if edit_product and edit_product.gstpercentage == 0 %}selected{% endif %}>0%</option>
+                                <option value="0.25" {% if edit_product and edit_product.gstpercentage == 0.25 %}selected{% endif %}>0.25%</option>
+                                <option value="3" {% if edit_product and edit_product.gstpercentage == 3 %}selected{% endif %}>3%</option>
+                                <option value="5" {% if edit_product and edit_product.gstpercentage == 5 %}selected{% endif %}>5%</option>
+                                <option value="12" {% if edit_product and edit_product.gstpercentage == 12 %}selected{% endif %}>12%</option>
+                                <option value="18" {% if edit_product and edit_product.gstpercentage == 18 %}selected{% endif %}>18%</option>
+                                <option value="28" {% if edit_product and edit_product.gstpercentage == 28 %}selected{% endif %}>28%</option>
+                            </select>
+                        </div>
 
-    </div>
+                        <div class="col-md-4">
+                            <label for="purchase_price" class="form-label">Purchase Price*</label>
+                            <input type="number" step="0.01" id="purchase_price" name="purchase_price" 
+                                class="form-control" required value="{{ edit_product.purchase_price|default:'0.00' }}"
+                                placeholder="Enter purchase price">
+                        </div>
 
-    <button type="submit" class="btn user-btn w-100 mt-4">
-        <i class="fas fa-user-{% if edit_product %}edit{% else %}plus{% endif %} me-2"></i>
-        {% if edit_product %} Update {% else %} Add {% endif %} Product
-    </button>
-</form>
+                        <div class="col-md-4">
+                            <label for="sale_price" class="form-label">Sale Price*</label>
+                            <input type="number" step="0.01" id="sale_price" name="sale_price" 
+                                class="form-control" required value="{{ edit_product.sale_price|default:'0.00' }}"
+                                placeholder="Enter sale price">
+                        </div>
 
+                        <!-- Product Picture -->
+                        <div class="col-md-4">
+                            <label for="product_picture" class="form-label">Product Picture</label>
+                            <input type="file" id="product_picture" name="product_picture" class="form-control" accept="image/*">
 
+                            {% if edit_product and edit_product.product_picture %}
+                                <div class="mt-2">
+                                    <p class="mb-1">Current Picture:</p>
+                                    <img src="{{ edit_product.product_picture.url }}" alt="Product Picture"
+                                        class="img-thumbnail" style="max-height:150px;">
+                                </div>
+                            {% endif %}
+                        </div>
+
+                    </div>
+
+                    <button type="submit" class="btn user-btn w-100 mt-4">
+                        <i class="fas fa-user-{% if edit_product %}edit{% else %}plus{% endif %} me-2"></i>
+                        {% if edit_product %} Update {% else %} Add {% endif %} Product
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 </div>

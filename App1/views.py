@@ -29,37 +29,39 @@ from django.contrib.auth.hashers import check_password
 
 def login(request):
     if request.method == 'POST':
-        username = request.POST.get('username', '').strip()
-        password = request.POST.get('password', '').strip()
+        username = request.POST.get('username')
+        password = request.POST.get('password')
+        print("Username entered:", username)
+        print("Password entered:", password)
 
         try:
             user = User.objects.get(username=username)
-            if user.is_active and check_password(password, user.password):
+            print("User:", user)
+
+            if check_password(password, user.password):
+                # ✅ Save session
                 request.session['current_user'] = user.username
 
+                # ✅ Create / update attendance record for today (check-in)
                 today = timezone.now().date()
                 attendance, created = Attendance.objects.get_or_create(user=user, date=today)
-                if not attendance.check_in:
+                if not attendance.check_in:  # avoid duplicate check-in
                     attendance.check_in = timezone.now()
                     attendance.save()
 
                 messages.success(request, 'Login Success')
-                return redirect('dashboard')  # Always redirect to dashboard
+                return redirect('dashboard')  # generic dashboard
             else:
                 messages.error(request, 'Invalid username or password')
         except User.DoesNotExist:
-            messages.error(request, 'User does not exist')
+            print("User does not exist with username:", username)
+            messages.error(request, 'User Does Not exist')
 
-        return render(request, 'login.html')
+        return redirect('login')
 
     else:
-        username = request.session.get('current_user')
-        if username:
-            try:
-                user = User.objects.get(username=username)
-                return redirect('dashboard')
-            except User.DoesNotExist:
-                request.session.flush()
+        if 'current_user' in request.session:
+            return redirect('dashboard')
         return render(request, 'login.html')
 
 
@@ -250,118 +252,124 @@ def reset_password(request):
 from django.db.models import Sum
 from django.db.models.functions import TruncDate
 
+# def dashboard(request):
+#     current_user, role_permission = get_logged_in_user(request)
+#     if not current_user:
+#         return redirect('login')
+
+#     today = date.today()
+
+#     if current_user.role.name.lower() == "salesman":
+#         # Salesman dashboard context
+#         orders = SalesOrder.objects.filter(created_by=current_user)
+#         total_orders = orders.count()
+#         total_revenue = orders.aggregate(total=Sum('grand_total'))['total'] or 0
+
+#         top_customers = (
+#             Customer.objects.filter(orders__created_by=current_user)
+#             .annotate(
+#                 total_revenue=Sum('orders__grand_total'),
+#                 total_orders=Count('orders')
+#             )
+#             .order_by('-total_revenue')[:5]
+#         )
+#         top_customers_list = [
+#             {
+#                 "name": c.full_name,
+#                 "revenue": float(c.total_revenue or 0),
+#                 "orders": c.total_orders,
+#                 "shop_name": c.shop_name,
+#                 "shop_city": c.shop_city
+#             }
+#             for c in top_customers
+#         ]
+
+#         context = {
+#             'current_user': current_user,
+#             'role_permission': role_permission,
+#             'today_orders': orders.filter(order_date__date=today).count(),
+#             'total_orders': total_orders,
+#             'total_revenue': total_revenue,
+#             'top_customers_list': top_customers_list,
+#         }
+#         return render(request, 'company_admin/salesman_dashboard.html', context)
+
+#     else:
+#         # Admin/other dashboard context
+#         product_sales_distribution = (
+#             SaleItem.objects.values('product__name')
+#             .annotate(total_quantity=Sum('quantity'))
+#             .order_by('product__name')
+#         )
+
+#         daily_production_data = (
+#             DailyProduction.objects
+#             .annotate(refurbished_date=TruncDate('date'))
+#             .values('refurbished_date', 'refurbished_product')
+#             .annotate(total_quantity=Sum('stock_in'))
+#             .order_by('refurbished_date', 'refurbished_product')
+#         )
+
+#         customers = Customer.objects.all()
+#         top_customers = (
+#             customers.annotate(
+#                 total_revenue=Sum('orders__grand_total'),
+#                 total_orders=Count('orders')
+#             )
+#             .order_by('-total_revenue')[:5]
+#         )
+#         top_customers_list = [
+#             {
+#                 "name": c.full_name,
+#                 "revenue": float(c.total_revenue or 0),
+#                 "orders": c.total_orders,
+#                 "shop_name": c.shop_name,
+#                 "shop_city":c.shop_city
+#             }
+#             for c in top_customers
+#         ]
+
+#         salesmen = User.objects.filter(role__name__icontains="Salesman")
+#         top_salesmen = (
+#             salesmen.annotate(
+#                 revenue=Sum('orders_created__grand_total'),
+#                 orders=Count('orders_created')
+#             ).order_by('-revenue')[:5]
+#         )
+
+#         top_salesman_list = [
+#             {
+#                 'first_name': s.first_name,
+#                 'last_name': s.last_name,
+#                 'revenue': float(s.revenue or 0),
+#                 'orders': s.orders
+#             } for s in top_salesmen
+#         ]
+#         context = {
+#             'current_user': current_user,
+#             'role_permission':role_permission,
+#             'today_production': DailyProduction.objects.filter(date__date=today).aggregate(total=Sum('stock_in'))['total'] or 0,
+#             'total_categories': Category.objects.count(),
+#             'total_products': Product.objects.count(),
+#             'total_quantity': DailyProduction.objects.aggregate(total=Sum('stock_in'))['total'] or 0,
+#             'total_customers': Customer.objects.count(),
+#             'total_staff': User.objects.count(),
+#             'pending_deliveries': 0,
+#             'total_orders': SalesOrder.objects.count(),
+#             'category_distribution': Category.objects.annotate(product_count=Count('product')),
+#             'product_distribution': list(product_sales_distribution),
+#             'daily_production_data': list(daily_production_data),
+#             'top_customers_list':top_customers_list,
+#             'top_salesman_list':top_salesman_list
+#         }
+#         return render(request, 'company_admin/dashboard.html', context)
+
 def dashboard(request):
     current_user, role_permission = get_logged_in_user(request)
     if not current_user:
         return redirect('login')
 
-    today = date.today()
-
-    if current_user.role.name.lower() == "salesman":
-        # Salesman dashboard context
-        orders = Order.objects.filter(created_by=current_user)
-        total_orders = orders.count()
-        total_revenue = orders.aggregate(total=Sum('grand_total'))['total'] or 0
-
-        top_customers = (
-            Customer.objects.filter(orders__created_by=current_user)
-            .annotate(
-                total_revenue=Sum('orders__grand_total'),
-                total_orders=Count('orders')
-            )
-            .order_by('-total_revenue')[:5]
-        )
-        top_customers_list = [
-            {
-                "name": c.full_name,
-                "revenue": float(c.total_revenue or 0),
-                "orders": c.total_orders,
-                "shop_name": c.shop_name,
-                "shop_city": c.shop_city
-            }
-            for c in top_customers
-        ]
-
-        context = {
-            'current_user': current_user,
-            'role_permission': role_permission,
-            'today_orders': orders.filter(order_date__date=today).count(),
-            'total_orders': total_orders,
-            'total_revenue': total_revenue,
-            'top_customers_list': top_customers_list,
-        }
-        return render(request, 'company_admin/salesman_dashboard.html', context)
-
-    else:
-        # Admin/other dashboard context
-        product_sales_distribution = (
-            OrderItem.objects.values('product__name')
-            .annotate(total_quantity=Sum('quantity'))
-            .order_by('product__name')
-        )
-
-        daily_production_data = (
-            DailyProduction.objects
-            .annotate(date_only=TruncDate('date'))
-            .values('date_only', 'product__name')
-            .annotate(total_quantity=Sum('stock_in'))
-            .order_by('date_only', 'product__name')
-        )
-
-        customers = Customer.objects.all()
-        top_customers = (
-            customers.annotate(
-                total_revenue=Sum('orders__grand_total'),
-                total_orders=Count('orders')
-            )
-            .order_by('-total_revenue')[:5]
-        )
-        top_customers_list = [
-            {
-                "name": c.full_name,
-                "revenue": float(c.total_revenue or 0),
-                "orders": c.total_orders,
-                "shop_name": c.shop_name,
-                "shop_city":c.shop_city
-            }
-            for c in top_customers
-        ]
-
-        salesmen = User.objects.filter(role__name__icontains="Salesman")
-        top_salesmen = (
-            salesmen.annotate(
-                revenue=Sum('orders_created__grand_total'),
-                orders=Count('orders_created')
-            ).order_by('-revenue')[:5]
-        )
-
-        top_salesman_list = [
-            {
-                'first_name': s.first_name,
-                'last_name': s.last_name,
-                'revenue': float(s.revenue or 0),
-                'orders': s.orders
-            } for s in top_salesmen
-        ]
-        context = {
-            'current_user': current_user,
-            'role_permission':role_permission,
-            'today_production': DailyProduction.objects.filter(date__date=today).aggregate(total=Sum('stock_in'))['total'] or 0,
-            'total_categories': Category.objects.count(),
-            'total_products': Product.objects.count(),
-            'total_quantity': DailyProduction.objects.aggregate(total=Sum('stock_in'))['total'] or 0,
-            'total_customers': Customer.objects.count(),
-            'total_staff': User.objects.count(),
-            'pending_deliveries': 0,
-            'total_orders': Order.objects.count(),
-            'category_distribution': Category.objects.annotate(product_count=Count('product')),
-            'product_distribution': list(product_sales_distribution),
-            'daily_production_data': list(daily_production_data),
-            'top_customers_list':top_customers_list,
-            'top_salesman_list':top_salesman_list
-        }
-        return render(request, 'company_admin/dashboard.html', context)
-
+    return render(request, 'company_admin/dashboard.html', {'current_user': current_user, 'role_permission':role_permission})
 
 @csrf_exempt
 def profile(request):
@@ -404,40 +412,33 @@ from django.conf import settings
 
 def send_welcome_email(user, password):
     """
-    Send a welcome email to a newly registered user with their login details.
+    Send a welcome email to a newly registered user with their login credentials.
     """
 
-    subject = f"Welcome to SOUTH SUTRA, {user.username}!"
+    # Use full name or fallback to first name
+    display_name = f"{user.first_name} {user.last_name}".strip() or user.first_name or "User"
+
+    subject = f"Welcome to Electronic Bazar, {display_name}!"
 
     message = (
-        f"Dear {user.first_name or user.username},\n\n"
-        f"Congratulations and welcome to SOUTH SUTRA! 🎉\n\n"
+        f"Hello {display_name},\n\n"
+        f"🎉 Welcome to Electronic Bazar!\n\n"
         f"Your account has been successfully created. Below are your login details:\n\n"
-        f"Username: {user.username}\n"
+        f"Email: {user.email}\n"
         f"Password: {password}\n\n"
-
-        # f"Please keep this information safe. We recommend changing your password "
-        # f"after your first login for security purposes.\n\n"
-
-        # f"You can login here: {settings.WEBSITE_URL if hasattr(settings, 'WEBSITE_URL') else 'https://southsutra.com/login'}\n\n"
-
-        # f"If you face any issues, feel free to reach out to us at "
-        # f"{getattr(settings, 'DEFAULT_SUPPORT_EMAIL', 'support@southsutra.com')} "
-        # f"or {getattr(settings, 'DEFAULT_SUPPORT_PHONE', '+91-8971607888')}.\n\n"
-
-        # f"We are excited to have you with us!\n\n"
-        # f"Best regards,\n"
-        # f"SOUTH SUTRA Team\n"
-        # f"{getattr(settings, 'COMPANY_CONTACT_INFO', 'Bangalore, India')}"
+        f"Please keep this information secure. We recommend changing your password after your first login.\n\n"
+        f"You can login here: https://electronicbazar.com/login\n\n"
+        f"If you need help, contact us anytime at support@electronicbazar.com.\n\n"
+        f"Warm regards,\n"
+        f"ELECTRONIC BAZAR Team\n"
     )
 
-    recipient_email = user.email
-    if recipient_email:
+    if user.email:
         send_mail(
             subject,
             message,
-            settings.EMAIL_HOST_USER,  # From email
-            [recipient_email],
+            settings.EMAIL_HOST_USER,  
+            [user.email],
             fail_silently=False,
         )
 
@@ -447,21 +448,20 @@ def add_user(request):
     current_user, role_permission = get_logged_in_user(request)
     if not current_user:
         return redirect('login')
+
     roles = Role.objects.all()
     context = {
-        'current_user':current_user,
-        'role_permission':role_permission,
+        'current_user': current_user,
+        'role_permission': role_permission,
         'roles': roles
     }
 
     if request.method == 'POST':
         role_id = request.POST['role']
-        username = request.POST['username']
-        password = request.POST['password']
-        first_name = request.POST['first_name']
-        last_name = request.POST['last_name']
-        email = request.POST['email']
-        phone_number = request.POST['phone_number']
+        first_name = request.POST['first_name'].strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST['email'].strip()
+        phone_number = request.POST['phone_number'].strip()
         address = request.POST['address']
         city = request.POST['city']
         state = request.POST['state']
@@ -471,10 +471,7 @@ def add_user(request):
 
         role = get_object_or_404(Role, id=role_id)
 
-        if User.objects.filter(username=username).exists():
-            messages.error(request, "Username already exists.")
-            return render(request, 'accounts/add_user.html', context)
-
+        # ✅ Check duplicates correctly
         if User.objects.filter(email=email).exists():
             messages.error(request, "Email already exists.")
             return render(request, 'accounts/add_user.html', context)
@@ -483,10 +480,12 @@ def add_user(request):
             messages.error(request, "Phone number already exists.")
             return render(request, 'accounts/add_user.html', context)
 
+        password = f"{first_name.lower()}@123"
+
         user = User(
             role=role,
-            username=username,
-            password=make_password(password),
+            username=email,
+            password=password,
             first_name=first_name,
             last_name=last_name,
             email=email,
@@ -496,15 +495,18 @@ def add_user(request):
             state=state,
             pincode=pincode,
             is_active=is_active,
-             profile_picture=profile_picture 
+            profile_picture=profile_picture
         )
         user.save()
+
+        # ✅ Send email (optional)
         send_welcome_email(user, password)
 
-        messages.success(request, 'User added successfully.')
+        messages.success(request, "User added successfully.")
         return redirect('user_table')
 
     return render(request, 'accounts/add_user.html', context)
+
 
 
 def edit_user(request, id):
@@ -516,51 +518,56 @@ def edit_user(request, id):
     roles = Role.objects.all()
 
     context = {
-        'current_user':current_user,
-        'role_permission':role_permission,
+        'current_user': current_user,
+        'role_permission': role_permission,
         'edit_user': user,
         'roles': roles
     }
 
     if request.method == 'POST':
-        email = request.POST['email']
-        phone_number = request.POST['phone_number']
-        username = request.POST['username']
+        email = request.POST['email'].strip()
+        phone_number = request.POST['phone_number'].strip()
 
-        if User.objects.filter(username=username).exclude(id=user.id).exists():
-            messages.error(request, "Username already exists.")
-            return render(request, 'accounts/add_user.html', context)
-
+        # ✅ Check if email already exists for another user
         if User.objects.filter(email=email).exclude(id=user.id).exists():
             messages.error(request, "Email already exists.")
             return render(request, 'accounts/add_user.html', context)
 
+        # ✅ Check if phone already exists for another user
         if User.objects.filter(phone_number=phone_number).exclude(id=user.id).exists():
             messages.error(request, "Phone number already exists.")
             return render(request, 'accounts/add_user.html', context)
 
-        user.username = username
+        # ✅ Update fields
         user.email = email
         user.phone_number = phone_number
-        user.first_name = request.POST['first_name']
-        user.last_name = request.POST['last_name']
+        user.first_name = request.POST['first_name'].strip()
+        user.last_name = request.POST.get('last_name', '').strip()
         user.address = request.POST['address']
         user.city = request.POST['city']
         user.state = request.POST['state']
         user.pincode = request.POST['pincode']
         user.is_active = request.POST.get('is_active') == 'true'
 
+        # ✅ Update role
         role_id = request.POST.get('role')
         user.role = get_object_or_404(Role, id=role_id)
 
+        # ✅ Update profile picture if uploaded
         if 'profile_picture' in request.FILES:
             user.profile_picture = request.FILES['profile_picture']
+
+        # ✅ Update password only if user typed a new one
+        new_password = request.POST.get('password', '').strip()
+        if new_password:
+            user.password = new_password  # Will auto hash inside save()
 
         user.save()
         messages.success(request, 'User updated successfully.')
         return redirect('user_table')
 
     return render(request, 'accounts/add_user.html', context)
+
 
 
 def delete_user(request, id):
@@ -839,116 +846,6 @@ def add_customer(request):
     return render(request, 'accounts/add_customer.html', context)
 
 
-def add_customer2(request):
-    current_user, role_permission = get_logged_in_user(request)
-    if not current_user:
-        return redirect('login')
-
-    users = User.objects.exclude(role__name__iexact="Admin")
-    context = {"current_user": current_user, "users": users, "role_permission": role_permission}
-
-    if request.method == 'POST':
-        # --- Collect form data ---
-        user_id = request.POST['user']
-        full_name = request.POST['full_name']
-        email = request.POST['email']
-        phone_number = request.POST['phone_number']
-        credit_period = request.POST.get('credit_period')
-        shop_name = request.POST['shop_name']
-        shop_type = request.POST.get('shop_type')
-        is_gst_registered = request.POST.get('is_gst_registered') == 'True'
-        gst_number = request.POST.get('gst_number', '').strip() if is_gst_registered else ''
-        shop_address = request.POST['shop_address']
-        shop_city = request.POST['shop_city']
-        shop_state = request.POST['shop_state']
-        shop_pincode = request.POST['shop_pincode']
-        discount = request.POST.get('discount', 0.0)
-        is_active = request.POST.get('is_active') == 'true'
-        weekday_footfall = request.POST.get('foot_fall_weekdays') or 0
-        weekend_footfall = request.POST.get('foot_fall_weekends') or 0
-
-        # --- Validations ---
-        if Customer.objects.filter(email=email).exists():
-            messages.error(request, "Email already exists.")
-            return render(request, 'accounts/add_customer.html', context)
-        if Customer.objects.filter(phone_number=phone_number).exists():
-            messages.error(request, "Phone number already exists.")
-            return render(request, 'accounts/add_customer.html', context)
-        if gst_number and Customer.objects.filter(gst_number=gst_number).exists():
-            messages.error(request, "GST number already exists.")
-            return render(request, 'accounts/add_customer.html', context)
-
-        # --- Save Customer ---
-        customer = Customer.objects.create(
-            user_id=user_id,
-            full_name=full_name,
-            email=email,
-            phone_number=phone_number,
-            credit_period=credit_period,
-            shop_name=shop_name,
-            shop_type=shop_type,
-            is_gst_registered=is_gst_registered,
-            gst_number=gst_number,
-            shop_address=shop_address,
-            shop_city=shop_city,
-            shop_state=shop_state,
-            shop_pincode=shop_pincode,
-            discount=discount,
-            is_active=is_active,
-            weekday_footfall=int(weekday_footfall),
-            weekend_footfall=int(weekend_footfall)
-        )
-
-        # --- Save shop images ---
-        for image in request.FILES.getlist('shop_images'):
-            CustomerShopImage.objects.create(customer=customer, image=image)
-
-        # --- Fetch GSTIN details & Save Branches ---
-        if is_gst_registered and gst_number:
-            data = fetch_gstin_details(gst_number)
-            if data.get("success"):
-                main = data.get("main_branch")
-                if main:
-                    Branch.objects.create(
-                        customer=customer,
-                        gstin=gst_number,
-                        customer_name=main.get("customer_name", ""),
-                        business_name=main.get("business_name", ""),
-                        address_line1=main.get("address_line1", ""),
-                        address_line2=main.get("address_line2", ""),
-                        city=main.get("city", ""),
-                        district=main.get("district", ""),
-                        pincode=main.get("pincode", ""),
-                        state=main.get("state", ""),
-                        is_head_office=True,
-                        nature_of_business=main.get("nature_of_business", ""),
-                        latitude=main.get("latitude", ""),
-                        longitude=main.get("longitude", "")
-                    )
-                for br in data.get("branches", []):
-                    Branch.objects.create(
-                        customer=customer,
-                        gstin=gst_number,
-                        customer_name=br.get("customer_name", ""),
-                        business_name=br.get("business_name", ""),
-                        address_line1=br.get("address_line1", ""),
-                        address_line2=br.get("address_line2", ""),
-                        city=br.get("city", ""),
-                        district=br.get("district", ""),
-                        pincode=br.get("pincode", ""),
-                        state=br.get("state", ""),
-                        is_head_office=False,
-                        nature_of_business=br.get("nature_of_business", ""),
-                        latitude=br.get("latitude", ""),
-                        longitude=br.get("longitude", "")
-                    )
-
-        messages.success(request, "Customer and branch details added successfully.")
-        return redirect('customer_table')
-
-    return render(request, 'accounts/add_customer.html', context)
-
-
 def edit_customer(request, id):
     current_user, role_permission = get_logged_in_user(request)
     if not current_user:
@@ -1190,18 +1087,18 @@ def add_product(request):
         try:
             name = request.POST.get('name')
             category_id = request.POST.get('category')
+            product_type = request.POST.get('product_type')
             description = request.POST.get('description', '')
-            unit = request.POST.get('unit')
+            unit = request.POST.get('unit', 'Pieces')
             hsn_code = request.POST.get('hsn_code')
             gstpercentage = request.POST.get('gstpercentage')
             brand_name = request.POST.get('brand_name')
             model_name = request.POST.get('model_name')
-            product_picture = request.FILES.get('product_picture')  # ✅ File upload
+            purchase_price = request.POST.get('purchase_price', 0)
+            sale_price = request.POST.get('sale_price', 0)
+            product_picture = request.FILES.get('product_picture')
 
-            # Ensure category exists
-            category = Category.objects.get(id=category_id)
-
-            # Check for duplicates
+            # Validation checks
             if Product.objects.filter(name__iexact=name).exists():
                 messages.error(request, "Product with this name already exists.")
                 return render(request, 'company_admin/add_product.html', {
@@ -1210,20 +1107,20 @@ def add_product(request):
                     'role_permission': role_permission
                 })
 
-            # ✅ Convert GST safely to Decimal
-            gst_value = Decimal(gstpercentage) if gstpercentage else Decimal("0.00")
-
             # Create product
             product = Product.objects.create(
                 name=name,
-                category=category,
+                category=Category.objects.get(id=category_id),
+                product_type=product_type,
                 description=description,
                 unit=unit,
                 hsn_code=hsn_code,
-                gstpercentage=gst_value,
+                gstpercentage=Decimal(gstpercentage or '0'),
                 brand_name=brand_name,
                 model_name=model_name,
-                product_picture=product_picture  # ✅ Will now save correctly
+                purchase_price=Decimal(purchase_price or '0'),
+                sale_price=Decimal(sale_price or '0'),
+                product_picture=product_picture
             )
 
             messages.success(request, 'Product added successfully.')
@@ -1235,11 +1132,11 @@ def add_product(request):
     context = {
         'categories': categories,
         'current_user': current_user,
-        'role_permission': role_permission
+        'role_permission': role_permission,
+        'product_types': Product.PRODUCT_TYPE_CHOICES,
+        'brand_choices': dict(Product._meta.get_field('brand_name').choices)
     }
     return render(request, 'company_admin/add_product.html', context)
-
-
 
 def edit_product(request, id):
     current_user, role_permission = get_logged_in_user(request)
@@ -1252,26 +1149,21 @@ def edit_product(request, id):
     if request.method == 'POST':
         try:
             product.name = request.POST.get('name')
+            product.product_type = request.POST.get('product_type')
             product.description = request.POST.get('description', '')
-            product.unit = request.POST.get('unit')
+            product.unit = request.POST.get('unit', 'Pieces')
             product.hsn_code = request.POST.get('hsn_code')
-            product.gstpercentage = request.POST.get('gstpercentage')
-
-            # ✅ Update category
-            category_id = request.POST.get('category')
-            if category_id:
-                product.category = Category.objects.get(id=category_id)
-
-            # ✅ Update brand and model
+            product.gstpercentage = Decimal(request.POST.get('gstpercentage') or '0')
+            product.category = Category.objects.get(id=request.POST.get('category'))
             product.brand_name = request.POST.get('brand_name')
             product.model_name = request.POST.get('model_name')
+            product.purchase_price = Decimal(request.POST.get('purchase_price') or '0')
+            product.sale_price = Decimal(request.POST.get('sale_price') or '0')
 
-            # ✅ Update product picture only if new one uploaded
             if request.FILES.get('product_picture'):
                 product.product_picture = request.FILES.get('product_picture')
 
             product.save()
-
             messages.success(request, 'Product updated successfully.')
             return redirect('product_table')
 
@@ -1282,9 +1174,20 @@ def edit_product(request, id):
         'edit_product': product,
         'categories': categories,
         'current_user': current_user,
-        'role_permission': role_permission
+        'role_permission': role_permission,
+        'product_types': Product.PRODUCT_TYPE_CHOICES,
+        'brand_choices': dict(Product._meta.get_field('brand_name').choices)
     }
     return render(request, 'company_admin/add_product.html', context)
+
+def delete_product(request, id):
+    current_user, role_permission = get_logged_in_user(request)
+    if not current_user:
+        return redirect('login')
+    product = get_object_or_404(Product, id=id)
+    product.delete()
+    messages.success(request, 'Product deleted successfully.')
+    return redirect('product_table')
 
 
 
@@ -1303,15 +1206,6 @@ def inventory_table(request):
 
     return render(request, 'company_admin/inventory_table.html', context)
 
-
-def delete_product(request, id):
-    current_user, role_permission = get_logged_in_user(request)
-    if not current_user:
-        return redirect('login')
-    product = get_object_or_404(Product, id=id)
-    product.delete()
-    messages.success(request, 'Product deleted successfully.')
-    return redirect('product_table')
 
 
 def daily_production_table(request):
@@ -1471,9 +1365,9 @@ def order_table(request):
         return redirect('login')
 
     if current_user.role.name.lower() == "admin":
-        orders = Order.objects.all()
+        orders = SalesOrder.objects.all()
     else:
-        orders = Order.objects.filter(created_by=current_user)
+        orders = SalesOrder.objects.filter(created_by=current_user)
 
     context = {
         'orders': orders,
@@ -1527,9 +1421,6 @@ def get_product_details(request, product_id):
         return JsonResponse({"error": str(e)}, status=500)   
 
 
-
-
-
 def send_order_email(order):
     """
     Send confirmation email to customer and assigned salesman when an order is placed.
@@ -1538,7 +1429,7 @@ def send_order_email(order):
     subject = f"Order Confirmation - {order.id}"
 
     # 🔹 Build items list
-    order_items = OrderItem.objects.filter(order=order)
+    order_items = SaleItem.objects.filter(order=order)
     items_list = "\n".join([f"{item.product.name} - {item.quantity} pcs" for item in order_items])
 
     # 🔹 Email body
@@ -1634,7 +1525,7 @@ def add_order(request):
         try:
             with transaction.atomic():
                 # 1️⃣ Create the Order
-                order = Order.objects.create(
+                order = SalesOrder.objects.create(
                     customer=customer,
                     created_by=user,
                     subtotal=subtotal,
@@ -1673,7 +1564,7 @@ def add_order(request):
                         total = safe_decimal(total)
 
                     # ✅ Directly create OrderItem (no stock/batch updates)
-                    OrderItem.objects.create(
+                    SaleItem.objects.create(
                         order=order,
                         product=product,
                         quantity=quantity,
@@ -1710,7 +1601,7 @@ def add_order(request):
             return redirect('add_order')
 
     # GET request
-    products = Product.objects.all()
+    products = Product.objects.filter(product_type='REFURBISHED')
 
     if current_user.role.name.lower() == "admin":
         customers = Customer.objects.all()
@@ -1728,7 +1619,7 @@ def add_order(request):
 
 
 def delete_order(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
+    order = get_object_or_404(SalesOrder, id=order_id)
 
     try:
         with transaction.atomic():
@@ -1792,7 +1683,7 @@ def fifo_batch1(request, product_id, weight):
 
 @transaction.atomic
 def generate_invoice(request, order_id):
-    order = get_object_or_404(Order, id=order_id)
+    order = get_object_or_404(SalesOrder, id=order_id)
 
     # ✅ Create or fetch invoice
     invoice, created = Invoice.objects.get_or_create(
@@ -1844,7 +1735,7 @@ def pay_remaining_amount(request, order_id):
     if not current_user:
         return redirect('login')
 
-    order = get_object_or_404(Order, id=order_id)
+    order = get_object_or_404(SalesOrder, id=order_id)
     user = get_object_or_404(User, username=current_user.username)
 
     if request.method == 'POST':
@@ -1916,31 +1807,31 @@ def view_user(request, user_id):
     }
     return render(request, 'accounts/view_user.html', context)
 
-
 def view_product(request, product_id):
     current_user, role_permission = get_logged_in_user(request)
     if not current_user:
         return redirect('login')
     
-    product = get_object_or_404(Product, id=product_id)
-    daily_productions = product.productions.all().order_by('-date')[:10]  # Last 10 production entries
+    try:
+        product = Product.objects.get(id=product_id)
+    except Product.DoesNotExist:
+        messages.error(request, "Product not found")
+        return redirect('product_table')
     
     context = {
-        'current_user': current_user,
         'product': product,
-        'daily_productions': daily_productions,
+        'current_user': current_user,
         'role_permission': role_permission
     }
     return render(request, 'company_admin/view_product.html', context)
-
 
 def view_receipt(request, order_id):
     current_user, role_permission = get_logged_in_user(request)
     if not current_user:
         return redirect('login')
 
-    orders = get_object_or_404(Order, id=order_id)
-    orderitems = OrderItem.objects.filter(order=order_id).select_related('product')
+    orders = get_object_or_404(SalesOrder, id=order_id)
+    orderitems = SaleItem.objects.filter(order=order_id).select_related('product')
 
     amount_in_words = num2words(orders.grand_total, to='currency', lang='en').replace('euro', 'Rupees').replace('cents', 'Paise').title()
 
@@ -1988,7 +1879,7 @@ def order_reports_view(request):
     if not current_user:
         return redirect('login')
 
-    orders = Order.objects.select_related('customer').prefetch_related('items__product')
+    orders = SalesOrder.objects.select_related('customer').prefetch_related('items__product')
     salespersons = User.objects.filter(role__name__icontains="sales")
     customers = Customer.objects.all()
     unique_shops = Customer.objects.values('shop_name').distinct()
@@ -2065,9 +1956,9 @@ def customer_reports(request):
     # 🔹 Summary Cards
     total_customers = customers.count()
     active_customers = customers.filter(is_active=True).count()
-    total_orders = Order.objects.count()
-    total_revenue = Order.objects.aggregate(total=Sum('grand_total'))['total'] or 0
-    pending_balance = Order.objects.aggregate(balance=Sum('balance_due'))['balance'] or 0
+    total_orders = SalesOrder.objects.count()
+    total_revenue = SalesOrder.objects.aggregate(total=Sum('grand_total'))['total'] or 0
+    pending_balance = SalesOrder.objects.aggregate(balance=Sum('balance_due'))['balance'] or 0
 
     # 🔹 Top Customers by Revenue (include order count)
     top_customers = (
@@ -2116,7 +2007,7 @@ def customer_report_view(request, customer_id):
     customer = get_object_or_404(Customer, id=customer_id)
 
     # ✅ Orders of this customer
-    orders = Order.objects.filter(customer=customer)
+    orders = SalesOrder.objects.filter(customer=customer)
 
     # ✅ Order Summary
     order_summary = orders.aggregate(
@@ -2128,7 +2019,7 @@ def customer_report_view(request, customer_id):
 
     # ✅ Product-wise sales
     product_sales = (
-        OrderItem.objects.filter(order__customer=customer)
+        SaleItem.objects.filter(order__customer=customer)
         .values("product__id", "product__name")
         .annotate(total_qty=Sum("quantity"), total_sales=Sum("total"))
         .order_by("-total_sales")
@@ -2164,10 +2055,10 @@ def salesman_reports(request):
     # 🔹 Summary cards
     total_salesman = salesmen.count()
     active_salesman = salesmen.filter(is_active=True).count()
-    total_revenue = Order.objects.aggregate(total=Sum('grand_total'))['total'] or 0
-    pending_balance = Order.objects.aggregate(balance=Sum('balance_due'))['balance'] or 0
+    total_revenue = SalesOrder.objects.aggregate(total=Sum('grand_total'))['total'] or 0
+    pending_balance = SalesOrder.objects.aggregate(balance=Sum('balance_due'))['balance'] or 0
 
-    # 🔹 Top 5 Salesmen by Revenue (with order count)  
+    # 🔹 Top 5 Salesmen by Revenue (with SalesOrder count)  
     top_salesmen = (
         salesmen.annotate(
             revenue=Sum('orders_created__grand_total'),
@@ -2213,7 +2104,7 @@ def salesman_report_view(request, salesman_id):
     customer_count = customers.count()
 
     # ✅ Orders under this salesman’s customers
-    orders = Order.objects.filter(customer__in=customers)
+    orders = SalesOrder.objects.filter(customer__in=customers)
 
     # ✅ Order Summary
     order_summary = orders.aggregate(
@@ -2225,7 +2116,7 @@ def salesman_report_view(request, salesman_id):
 
     # ✅ Product-wise Sales
     product_sales = (
-        OrderItem.objects.filter(order__in=orders)
+        SaleItem.objects.filter(order__in=orders)
         .values("product__id", "product__name")
         .annotate(total_qty=Sum("quantity"), total_sales=Sum("total"))
         .order_by("-total_sales")
@@ -2366,7 +2257,217 @@ def salesman_visit_list(request):
 
 
 
+def vendor_table(request):
+    current_user, role_permission = get_logged_in_user(request)
+    if not current_user:
+        return redirect('login')
+    
+    vendors = Vendor.objects.all()
+    context = {
+        'vendors': vendors,
+        'current_user': current_user,
+        'role_permission': role_permission
+    }
+    return render(request, 'accounts/vendor_table.html', context)
+
+def add_vendor(request):
+    current_user, role_permission = get_logged_in_user(request)
+    if not current_user:
+        return redirect('login')
+
+    context = {
+        'current_user': current_user,
+        'role_permission': role_permission
+    }
+
+    if request.method == 'POST':
+        name = request.POST['name']
+        email = request.POST.get('email')
+        phone_number = request.POST.get('phone_number')
+        gst_number = request.POST.get('gst_number')
+
+        # if Vendor.objects.filter(name=name).exists():
+        #     messages.error(request, "Vendor name already exists.")
+        #     return render(request, 'accounts/add_vendor.html', context)
+
+        # if email and Vendor.objects.filter(email=email).exists():
+        #     messages.error(request, "Email already exists.")
+        #     return render(request, 'accounts/add_vendor.html', context)
+
+        # if phone_number and Vendor.objects.filter(phone_number=phone_number).exists():
+        #     messages.error(request, "Phone number already exists.")
+        #     return render(request, 'accounts/add_vendor.html', context)
+
+        vendor = Vendor(
+            name=name,
+            contact_person=request.POST.get('contact_person'),
+            email=email,
+            phone_number=phone_number,
+            address=request.POST.get('address'),
+            gst_number=gst_number,
+            city=request.POST.get('city'),
+            state=request.POST.get('state'),
+            pincode=request.POST.get('pincode')
+        )
+        vendor.save()
+        messages.success(request, 'Vendor added successfully.')
+        return redirect('vendor_table')
+
+    return render(request, 'accounts/add_vendor.html', context)
+
+def edit_vendor(request, id):
+    current_user, role_permission = get_logged_in_user(request)
+    if not current_user:
+        return redirect('login')
+
+    vendor = get_object_or_404(Vendor, id=id)
+    context = {
+        'current_user': current_user,
+        'role_permission': role_permission,
+        'edit_vendor': vendor
+    }
+
+    if request.method == 'POST':
+        name = request.POST['name']
+        email = request.POST.get('email')
+        phone_number = request.POST.get('phone_number')
+        
+        # if Vendor.objects.filter(name=name).exclude(id=vendor.id).exists():
+        #     messages.error(request, "Vendor name already exists.")
+        #     return render(request, 'accounts/add_vendor.html', context)
+
+        # if email and Vendor.objects.filter(email=email).exclude(id=vendor.id).exists():
+        #     messages.error(request, "Email already exists.")
+        #     return render(request, 'accounts/add_vendor.html', context)
+
+        # if phone_number and Vendor.objects.filter(phone_number=phone_number).exclude(id=vendor.id).exists():
+        #     messages.error(request, "Phone number already exists.")
+        #     return render(request, 'accounts/add_vendor.html', context)
+
+        vendor.name = name
+        vendor.contact_person = request.POST.get('contact_person')
+        vendor.email = email
+        vendor.phone_number = phone_number
+        vendor.address = request.POST.get('address')
+        vendor.gst_number = request.POST.get('gst_number')
+        vendor.city = request.POST.get('city')
+        vendor.state = request.POST.get('state')
+        vendor.pincode = request.POST.get('pincode')
+
+        vendor.save()
+        messages.success(request, 'Vendor updated successfully.')
+        return redirect('vendor_table')
+
+    return render(request, 'accounts/add_vendor.html', context)
+
+def delete_vendor(request, id):
+    current_user, role_permission = get_logged_in_user(request)
+    if not current_user:
+        return redirect('login')
+        
+    vendor = get_object_or_404(Vendor, id=id)
+    vendor.delete()
+    messages.success(request, 'Vendor deleted successfully.')
+    return redirect('vendor_table')
+
+def view_vendor(request, vendor_id):
+    current_user, role_permission = get_logged_in_user(request)
+    if not current_user:
+        return redirect('login')
+    
+    try:
+        vendor = Vendor.objects.get(id=vendor_id)
+    except Vendor.DoesNotExist:
+        messages.error(request, "Vendor not found")
+        return redirect('vendor_table')
+    
+    context = {
+        'vendor': vendor,
+        'current_user': current_user,
+        'role_permission': role_permission
+    }
+    return render(request, 'accounts/view_vendor.html', context)
+
+def purchase_order_table(request):
+    current_user, role_permission = get_logged_in_user(request)
+    if not current_user:
+        return redirect('login')
+
+    if current_user.role.name.lower() == "admin":
+        orders = PurchaseOrder.objects.all()
+    else:
+        orders = PurchaseOrder.objects.filter(created_by=current_user)
+
+    context = {
+        'orders': orders,
+        'current_user': current_user,
+        'role_permission': role_permission
+    }
+    return render(request, 'company_admin/purchase_order_table.html', context)
 
 
+def add_purchase_order(request):
+    current_user, role_permission = get_logged_in_user(request)
+    if not current_user:
+        return redirect('login')
 
+    if request.method == 'POST':
+        vendor_id = request.POST.get('vendor')
+        items = request.POST.getlist('items[]')  # expects CSV strings: productId,quantity,cost_price,total_price
+        remarks = request.POST.get('remarks', '')
+        grand_total = safe_decimal(request.POST.get('grand_total', '0'))
+        total_paid = safe_decimal(request.POST.get('amount_paid', '0'))
 
+        vendor = get_object_or_404(Vendor, id=vendor_id)
+        user = get_object_or_404(User, username=current_user.username)
+
+        try:
+            with transaction.atomic():
+                order = PurchaseOrder.objects.create(
+                    vendor=vendor,
+                    created_by=user,
+                    remarks=remarks,
+                    total_paid=total_paid,
+                    balance_due=(grand_total - total_paid),
+                    payment_status='paid' if total_paid >= grand_total else 'partial' if total_paid > 0 else 'pending'
+                )
+
+                # create PurchaseItem rows
+                for item_data in items:
+                    # each item_data should be: "productId,quantity,cost_price,total_price"
+                    try:
+                        product_id, quantity, cost_price, total_price = [p.strip() for p in item_data.split(',')]
+                    except ValueError:
+                        raise ValueError(f"Invalid item format: {item_data}")
+
+                    product = get_object_or_404(Product, id=int(product_id))
+                    quantity = int(float(quantity))
+                    cost_price = safe_decimal(cost_price)
+                    total_price = safe_decimal(total_price)
+
+                    PurchaseItem.objects.create(
+                        purchase_order=order,
+                        product=product,
+                        quantity=quantity,
+                        cost_price=cost_price,
+                        total_price=total_price
+                    )
+
+                messages.success(request, "Purchase order created successfully.")
+                return redirect('purchase_order_table')
+
+        except Exception as e:
+            messages.error(request, f"Error creating purchase order: {e}")
+            return redirect('add_purchase_order')
+
+    # GET
+    products = Product.objects.exclude(product_type='REFURBISHED')
+    vendors = Vendor.objects.all()
+
+    context = {
+        'products': products,
+        'vendors': vendors,
+        'current_user': current_user,
+        'role_permission': role_permission
+    }
+    return render(request, 'company_admin/purchase_order.html', context)

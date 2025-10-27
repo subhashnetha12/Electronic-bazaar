@@ -31,9 +31,14 @@ urlpatterns = [
     path('customers/', customer_table, name='customer_table'),
     path('add/customer/', add_customer, name='add_customer'),
     path('customer/view/<int:customer_id>/', view_customer, name='view_customer'),
-    
     path('customer/edit/<int:id>/', edit_customer, name='edit_customer'),
     path('customer/delete/<int:id>/', delete_customer, name='delete_customer'),
+
+    path('vendor/table/', vendor_table, name='vendor_table'),
+    path('add/vendor/', add_vendor, name='add_vendor'),
+    path('vendor/edit/<int:id>/', edit_vendor, name='edit_vendor'),
+    path('vendor/delete/<int:id>/', delete_vendor, name='delete_vendor'),
+    path('vendor/details/<int:vendor_id>/', view_vendor, name='view_vendor'),
 
     path('inventory/', inventory_table, name='inventory_table'),
     
@@ -61,7 +66,8 @@ urlpatterns = [
     path('orders/<int:order_id>/pay/', pay_remaining_amount, name='pay_remaining_amount'),
     path('orders/delete/<int:order_id>/', delete_order, name='delete_order'),
 
-
+    path('purchase/order/list/',purchase_order_table,name='purchase_order_table'),
+    path('add-purchase-order/', add_purchase_order, name='add_purchase_order'),
 
     path('get-product-details/<int:product_id>/', get_product_details, name='get_product_details'),
 

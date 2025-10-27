@@ -1,0 +1,332 @@
+{% extends 'company_admin/base.html' %}
+{% block content %}
+
+<style>
+    body {
+        background: linear-gradient(120deg, #fff5e6 60%, #fef2e6 100%);
+        font-family: 'Poppins', sans-serif;
+    }
+    .main-container { gap: 20px; max-width: 1400px; margin: 10 auto; padding: 5px; }
+    .card { border-radius: 1.2rem; box-shadow: 0 6px 32px rgba(96, 31, 47, 0.10); border: none; background: #fff; }
+    .card-header { background-color: rgb(255, 195, 106); color: rgb(0,0,0); border-radius: 1.2rem 1.2rem 0 0 !important; padding: 15px 20px; font-weight: 600; }
+    .form-label { font-weight: bold !important; color: #601F2F; }
+    .form-control, .form-select { font-size: 1rem; border-radius: 0.5rem; border: 1.5px solid #e2e8f0; background: #fdfdfd; }
+    .form-control:focus, .form-select:focus { border-color: #ffb347; box-shadow: 0 0 0 2px #ffb34733; }
+    .btn-danger { background: linear-gradient(90deg, #dc3545, #c82333); border: none; border-radius: 0.5rem; }
+    .create-sale-btn { background-color: rgb(255, 195, 106); color: rgb(0, 0, 0); border: none; border-radius: 1rem; font-weight: 600; font-size: 1.1rem; padding: 12px; width: 100%; }
+    .table thead th { background-color: rgb(255, 195, 106); color: rgb(0, 0, 0); border: none; font-weight: 600; }
+    .summary-item { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; }
+    .summary-item:last-child { border-bottom: none; font-weight: bold; font-size: 1.1rem; }
+    @media (max-width: 991.98px) { .main-container { flex-direction: column; } }
+</style>
+
+<div class="container-fluid">
+    <div class="main-container">
+        <!-- Purchase Items Card -->
+        <div class="card purchase-items-card mb-3">
+            <div class="card-header"><h5 class="mb-0">Purchase Items</h5></div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label for="itemSelect" class="form-label">Select Product</label>
+                        <select class="form-select" id="itemSelect">
+                            <option value="">Search a product</option>
+                            {% for product in products %}
+                                <option value="{{ product.id }}"
+                                        data-name="{{ product.name }}"
+                                        data-purchase-price="{{ product.purchase_price }}"
+                                        data-gst="{{ product.gstpercentage }}">
+                                    {{ product.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">&nbsp;</label>
+                        <button class="btn btn-danger w-100" id="deleteAllItems" type="button">
+                            <i class="fas fa-trash"></i> Delete All Items
+                        </button>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered" id="itemsTable">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Product Name</th>
+                                <th>Cost Price</th>
+                                <th>Quantity</th>
+                                <th>Subtotal</th>
+                                <th>GST %</th>
+                                <th>GST Amount</th>
+                                <th>Total</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemsTableBody"></tbody>
+                    </table>
+                    <div id="noDataMessage" class="text-center text-muted py-4">No data available in table</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Form with Vendor + Summary cards -->
+        <form method="post" id="purchaseOrderForm">
+            {% csrf_token %}
+            <div class="row">
+                <!-- Vendor Details Card -->
+                <div class="col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-header"><h5 class="mb-0">Vendor Details</h5></div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label for="vendorSelect" class="form-label">Vendor</label>
+                                <select class="form-select" name="vendor" id="vendorSelect" required>
+                                    <option value="">Select vendor</option>
+                                    {% for vendor in vendors %}
+                                        <option value="{{ vendor.id }}"
+                                                data-contact="{{ vendor.contact_person }}"
+                                                data-email="{{ vendor.email }}"
+                                                data-phone="{{ vendor.phone_number }}"
+                                                data-gst="{{ vendor.gst_number }}">
+                                            {{ vendor.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div id="vendorDetails">
+                                <div class="mb-2"><label class="form-label fw-bold">Contact Person:</label><p id="contactPerson" class="form-control-plaintext">—</p></div>
+                                <div class="mb-2"><label class="form-label fw-bold">Email:</label><p id="vendorEmail" class="form-control-plaintext">—</p></div>
+                                <div class="mb-2"><label class="form-label fw-bold">Phone:</label><p id="vendorPhone" class="form-control-plaintext">—</p></div>
+                                <div class="mb-2"><label class="form-label fw-bold">GST Number:</label><p id="vendorGst" class="form-control-plaintext">—</p></div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="remarks" class="form-label">Remarks</label>
+                                <textarea class="form-control" id="remarks" name="remarks" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Order Summary Card -->
+                <div class="col-md-6 mb-3">
+                    <div class="card">
+                        <div class="card-header"><h5 class="mb-0">Order Summary</h5></div>
+                        <div class="card-body">
+                            <div class="summary-item"><span>Subtotal</span><span id="subtotal">₹0.00</span></div>
+                            <div class="summary-item"><span>Total GST</span><span id="totalGst">₹0.00</span></div>
+                            <div class="summary-item fw-bold"><span>Grand Total</span><span id="grandTotal">₹0.00</span></div>
+
+                            <div class="mb-3 mt-3">
+                                <label class="form-label">Amount Paid</label>
+                                <input type="number" class="form-control" id="amountPaid" name="amount_paid" step="0.01" value="0">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Balance Due</label>
+                                <input type="text" class="form-control" id="balanceDue" readonly value="0.00">
+                            </div>
+
+                            <!-- Hidden inputs for form submission (view expects items[] CSV) -->
+                            <input type="hidden" name="subtotal" id="subtotalInput">
+                            <input type="hidden" name="total_gst" id="totalGstInput">
+                            <input type="hidden" name="grand_total" id="grandTotalInput">
+                            <div id="hiddenItemsContainer"></div>
+
+                            <div class="text-end">
+                                <button class="btn create-sale-btn" type="submit">Create Purchase Order</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+let itemCounter = 1;
+let items = [];
+
+document.addEventListener("DOMContentLoaded", function() {
+    const itemSelect = document.getElementById("itemSelect");
+    const vendorSelect = document.getElementById("vendorSelect");
+    const amountPaidInput = document.getElementById("amountPaid");
+    const deleteAllBtn = document.getElementById("deleteAllItems");
+
+    // vendor change -> populate details
+    vendorSelect.addEventListener("change", function() {
+        const opt = this.options[this.selectedIndex];
+        document.getElementById("contactPerson").textContent = opt?.dataset?.contact || "—";
+        document.getElementById("vendorEmail").textContent = opt?.dataset?.email || "—";
+        document.getElementById("vendorPhone").textContent = opt?.dataset?.phone || "—";
+        document.getElementById("vendorGst").textContent = opt?.dataset?.gst || "—";
+    });
+
+    // add product
+    itemSelect.addEventListener("change", function() {
+        const productId = this.value;
+        if (!productId) return;
+        const opt = this.options[this.selectedIndex];
+        const item = {
+            id: productId,
+            name: opt.dataset.name,
+            costPrice: parseFloat(opt.dataset.purchasePrice || 0),
+            gstPercentage: parseFloat(opt.dataset.gst || 0),
+            quantity: 1
+        };
+        addItemToTable(item);
+        this.value = "";
+    });
+
+    deleteAllBtn.addEventListener("click", function() {
+        items = [];
+        document.getElementById("itemsTableBody").innerHTML = "";
+        updateSummary();
+        toggleNoDataMessage();
+    });
+
+    amountPaidInput.addEventListener("input", updateBalanceDue);
+
+    toggleNoDataMessage();
+});
+
+function addItemToTable(item) {
+    if (items.some(i => i.id === item.id)) {
+        alert("Item already added to the purchase order.");
+        return;
+    }
+
+    item.subtotal = item.costPrice * item.quantity;
+    item.gstAmount = (item.subtotal * item.gstPercentage) / 100;
+    item.total = item.subtotal + item.gstAmount;
+
+    items.push(item);
+    renderRow(item);
+    itemCounter++;
+    updateSummary();
+    toggleNoDataMessage();
+}
+
+function renderRow(item) {
+    const tbody = document.getElementById("itemsTableBody");
+    const row = document.createElement("tr");
+    row.dataset.itemId = item.id;
+    row.innerHTML = `
+        <td class="idx-cell"></td>
+        <td>${item.name}</td>
+        <td>₹${item.costPrice.toFixed(2)}</td>
+        <td><input type="number" class="form-control form-control-sm qty-input" value="${item.quantity}" min="1" style="width:80px" data-item-id="${item.id}"></td>
+        <td class="subtotal-cell">₹${item.subtotal.toFixed(2)}</td>
+        <td>${item.gstPercentage}%</td>
+        <td class="gst-cell">₹${item.gstAmount.toFixed(2)}</td>
+        <td class="total-cell">₹${item.total.toFixed(2)}</td>
+        <td><button type="button" class="btn btn-danger btn-sm remove-btn" data-item-id="${item.id}"><i class="fas fa-trash"></i></button></td>
+    `;
+    tbody.appendChild(row);
+
+    // attach listeners
+    row.querySelector('.qty-input').addEventListener('input', function() {
+        const id = this.dataset.itemId;
+        const val = Math.max(1, parseInt(this.value) || 1);
+        updateItemQuantity(id, val);
+    });
+    row.querySelector('.remove-btn').addEventListener('click', function() {
+        const id = this.dataset.itemId;
+        removeItem(id);
+    });
+
+    // re-index rows
+    reindexRows();
+}
+
+function reindexRows() {
+    document.querySelectorAll('#itemsTableBody tr').forEach((tr, idx) => {
+        const cell = tr.querySelector('.idx-cell');
+        if (cell) cell.textContent = idx + 1;
+    });
+}
+
+function updateItemQuantity(itemId, newQuantity) {
+    const it = items.find(i => i.id === itemId);
+    if (!it) return;
+    it.quantity = parseInt(newQuantity) || 1;
+    it.subtotal = it.costPrice * it.quantity;
+    it.gstAmount = (it.subtotal * it.gstPercentage) / 100;
+    it.total = it.subtotal + it.gstAmount;
+
+    const row = document.querySelector(`#itemsTableBody tr[data-item-id="${itemId}"]`);
+    if (!row) return;
+    row.querySelector('.subtotal-cell').textContent = `₹${it.subtotal.toFixed(2)}`;
+    row.querySelector('.gst-cell').textContent = `₹${it.gstAmount.toFixed(2)}`;
+    row.querySelector('.total-cell').textContent = `₹${it.total.toFixed(2)}`;
+
+    updateSummary();
+}
+
+function removeItem(itemId) {
+    items = items.filter(i => i.id !== itemId);
+    const row = document.querySelector(`#itemsTableBody tr[data-item-id="${itemId}"]`);
+    if (row) row.remove();
+    reindexRows();
+    updateSummary();
+    toggleNoDataMessage();
+}
+
+function updateSummary() {
+    const subtotal = items.reduce((s, i) => s + (i.subtotal || 0), 0);
+    const totalGst = items.reduce((s, i) => s + (i.gstAmount || 0), 0);
+    const grandTotal = subtotal + totalGst;
+
+    document.getElementById("subtotal").textContent = `₹${subtotal.toFixed(2)}`;
+    document.getElementById("totalGst").textContent = `₹${totalGst.toFixed(2)}`;
+    document.getElementById("grandTotal").textContent = `₹${grandTotal.toFixed(2)}`;
+
+    document.getElementById("subtotalInput").value = subtotal.toFixed(2);
+    document.getElementById("totalGstInput").value = totalGst.toFixed(2);
+    document.getElementById("grandTotalInput").value = grandTotal.toFixed(2);
+
+    // build hidden items[] inputs expected by view: productId,quantity,cost_price,total_price
+    const hiddenContainer = document.getElementById("hiddenItemsContainer");
+    hiddenContainer.innerHTML = '';
+    items.forEach(it => {
+        const inp = document.createElement('input');
+        inp.type = 'hidden';
+        inp.name = 'items[]';
+        inp.value = `${it.id},${it.quantity},${it.costPrice.toFixed(2)},${it.total.toFixed(2)}`;
+        hiddenContainer.appendChild(inp);
+    });
+
+    updateBalanceDue();
+}
+
+function updateBalanceDue() {
+    const grandTotal = parseFloat(document.getElementById("grandTotalInput").value) || 0;
+    const amountPaid = parseFloat(document.getElementById("amountPaid").value) || 0;
+    const balanceDue = grandTotal - amountPaid;
+    document.getElementById("balanceDue").value = balanceDue.toFixed(2);
+}
+
+function toggleNoDataMessage() {
+    const noData = document.getElementById("noDataMessage");
+    const tbody = document.getElementById("itemsTableBody");
+    if (!noData) return;
+    noData.style.display = (tbody.children.length === 0) ? "block" : "none";
+}
+
+// final form validation: ensure items present before submit
+document.getElementById("purchaseOrderForm").addEventListener("submit", function(e) {
+    if (items.length === 0) {
+        e.preventDefault();
+        alert("Please add at least one item to the purchase order.");
+        return false;
+    }
+    // remarks and amount_paid are already part of form inputs
+    return true;
+});
+</script>
+
+{% endblock content %}

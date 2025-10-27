@@ -308,7 +308,7 @@
             </div>
             <div class="navbar-right me-2">
                 <div class="navbar-user-info">
-                    <span class="username">{{current_user.username}}</span>
+                    <span class="username">{{current_user.first_name}} {{current_user.last_name}}</span>
                     <span class="role">{{current_user.role.name}}</span>
                 </div>
                 {% if current_user.profile_picture %}
@@ -358,6 +358,9 @@
                     {% if role_permission.customer_v %}
                     <li class="nav-item"><a class="nav-link" href="{% url 'customer_table' %}">Customers</a></li>
                     {% endif %}
+                    {% if role_permission.users_v %}
+                    <li class="nav-item"><a class="nav-link" href="{% url 'vendor_table' %}">Vendors</a></li>
+                    {% endif %}
                 </ul>
             </li>
             {% endif %}
@@ -403,13 +406,6 @@
 
             {% if role_permission.orders_v %}
             <li class="nav-item">
-                <a class="nav-link" href="{% url 'order_table' %}">
-                    <i class="fas fa-shopping-bag nav-icon"></i>
-                    <span class="nav-text">Orders</span>
-                </a>
-            </li>
-            {% endif %}
-            <!-- <li class="nav-item">
                 <a class="nav-link" href="#">
                     <i class="fas fa-shopping-bag nav-icon"></i>
                     <span class="nav-text">Orders</span>
@@ -417,11 +413,12 @@
                 </a>
                 <ul class="nav flex-column submenu" id="ordersSubmenu">
                     <li class="nav-item"><a class="nav-link" href="{% url 'order_table' %}">Sale Orders</a></li>
-                     <li class="nav-item"><a class="nav-link" href="#">Pending Orders</a></li>
+                     <li class="nav-item"><a class="nav-link" href="{% url 'purchase_order_table' %}">Purchase Orders</a></li>
                     <li class="nav-item"><a class="nav-link" href="#">Completed Orders</a></li>
                     <li class="nav-item"><a class="nav-link" href="#">Cancelled Orders</a></li> 
                 </ul>
-            </li> -->
+            </li>
+            {% endif %}
            
             
             <!-- Reports -->

@@ -146,18 +146,15 @@
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col">
-                                                <span class="h6 font-semibold text-muted text-sm d-block mb-2">Today
-                                                    Production</span>
-                                                <span class="h3 font-bold mb-0">{{ today_production }}</span>
+                                                <span class="h6 font-semibold text-muted text-sm d-block mb-2">Total Payables </span>
+                                                <span class="h3 font-bold mb-0">Rs.30000</span>
                                             </div>
                                             <div class="col-auto">
-                                                <div
-                                                    class="icon icon-shape bg-primary text-white text-lg rounded-circle">
-                                                    <i class="fa-solid fa fa-users"></i>
+                                                <div class="icon icon-shape bg-primary text-white text-lg rounded-circle">
+                                                    <i class="fa fa-money-bill-wave"></i>
                                                 </div>
                                             </div>
                                         </div>
-
                                     </div>
                                 </div>
                             </a>
@@ -168,54 +165,48 @@
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col">
-                                                <span
-                                                    class="h6 font-semibold text-muted text-sm d-block mb-2">Categories</span>
-                                                <span class="h3 font-bold mb-0">{{ total_categories }}</span>
+                                                <span class="h6 font-semibold text-muted text-sm d-block mb-2">Total Receivables</span>
+                                                <span class="h3 font-bold mb-0">Rs.80000</span>
                                             </div>
                                             <div class="col-auto">
-                                                <div
-                                                    class="icon icon-shape bg-tertiary text-white text-lg rounded-circle">
-                                                    <i class="fa fa-clipboard-list"></i>
+                                                <div class="icon icon-shape bg-tertiary text-white text-lg rounded-circle">
+                                                    <i class="fa fa-hand-holding-usd"></i>
                                                 </div>
                                             </div>
                                         </div>
-
                                     </div>
                                 </div>
                             </a>
                         </div>
-
                         <div class="col-xl-3 col-sm-6 col-12" id="products">
                             <a href="#">
                                 <div class="card shadow border-0">
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col">
-                                                <span
-                                                    class="h6 font-semibold text-muted text-sm d-block mb-2">Products</span>
-                                                <span class="h3 font-bold mb-0">{{ total_products }}</span>
+                                                <span class="h6 font-semibold text-muted text-sm d-block mb-2">Revenue</span>
+                                                <span class="h3 font-bold mb-0">Rs.50000</span>
                                             </div>
                                             <div class="col-auto">
-                                                <div
-                                                    class="icon icon-shape bg-tertiary text-white text-lg rounded-circle">
-                                                    <i class="fa fa-clipboard-list"></i>
+                                                <div class="icon icon-shape bg-tertiary text-white text-lg rounded-circle">
+                                                    <i class="fa fa-chart-line"></i>
                                                 </div>
                                             </div>
                                         </div>
-
                                     </div>
                                 </div>
                             </a>
                         </div>
-                        <div class="col-xl-3 col-sm-6 col-12" id="quantities">
+
+                        <div class="col-xl-3 col-sm-6 col-12" id="profiles">
                             <a href="#">
                                 <div class="card shadow border-0">
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col">
                                                 <span
-                                                    class="h6 font-semibold text-muted text-sm d-block mb-2">Quantity</span>
-                                                <span class="h3 font-bold mb-0">{{ total_quantity }}</span>
+                                                    class="h6 font-semibold text-muted text-sm d-block mb-2">Staff</span>
+                                                <span class="h3 font-bold mb-0">{{ total_staff }}</span>
                                             </div>
                                             <div class="col-auto">
                                                 <div
@@ -229,6 +220,7 @@
                                 </div>
                             </a>
                         </div>
+                        
 
 
 
@@ -256,20 +248,44 @@
                                 </div>
                             </a>
                         </div>
-                        <div class="col-xl-3 col-sm-6 col-12" id="profiles">
+                        
+                        <div class="col-xl-3 col-sm-6 col-12" id="quantities">
                             <a href="#">
                                 <div class="card shadow border-0">
                                     <div class="card-body">
                                         <div class="row">
                                             <div class="col">
                                                 <span
-                                                    class="h6 font-semibold text-muted text-sm d-block mb-2">Staff</span>
-                                                <span class="h3 font-bold mb-0">{{ total_staff }}</span>
+                                                    class="h6 font-semibold text-muted text-sm d-block mb-2">Purchases</span>
+                                                <span class="h3 font-bold mb-0">100</span>
                                             </div>
                                             <div class="col-auto">
                                                 <div
                                                     class="icon icon-shape bg-primary text-white text-lg rounded-circle">
-                                                    <i class="fa-solid fa fa-users"></i>
+                                                    <i class="fa fa-shopping-bag"></i>
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </a>
+                        </div>
+                        
+                        <div class="col-xl-3 col-sm-6 col-12" id="sales">
+                            <a href="#">
+                                <div class="card shadow border-0">
+                                    <div class="card-body">
+                                        <div class="row">
+                                            <div class="col">
+                                                <span
+                                                    class="h6 font-semibold text-muted text-sm d-block mb-2">Sales</span>
+                                                <span class="h3 font-bold mb-0">{{ total_orders }}</span>
+                                            </div>
+                                            <div class="col-auto">
+                                                <div
+                                                    class="icon icon-shape bg-warning text-white text-lg rounded-circle">
+                                                    <i class="fa fa-shopping-cart"></i>
                                                 </div>
                                             </div>
                                         </div>
@@ -299,28 +315,7 @@
                                 </div>
                             </a>
                         </div>
-                        <div class="col-xl-3 col-sm-6 col-12" id="sales">
-                            <a href="#">
-                                <div class="card shadow border-0">
-                                    <div class="card-body">
-                                        <div class="row">
-                                            <div class="col">
-                                                <span
-                                                    class="h6 font-semibold text-muted text-sm d-block mb-2">Sales</span>
-                                                <span class="h3 font-bold mb-0">{{ total_orders }}</span>
-                                            </div>
-                                            <div class="col-auto">
-                                                <div
-                                                    class="icon icon-shape bg-warning text-white text-lg rounded-circle">
-                                                    <i class="fa fa-shopping-cart"></i>
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                    </div>
-                                </div>
-                            </a>
-                        </div>
+                        
                     </div>
 
                     <div class="row mb-3">

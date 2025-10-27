@@ -102,20 +102,20 @@ class User(models.Model):
     username = models.CharField(max_length=255, unique=True)
     password = models.CharField(max_length=255)
     first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
+    last_name = models.CharField(max_length=255,null=True, blank=True)
     email = models.EmailField(unique=True)
     phone_number = models.CharField(max_length=15, unique=True)
-    address = models.TextField()
-    city = models.CharField(max_length=255)
-    state = models.CharField(max_length=255)
-    pincode = models.CharField(max_length=10)
+    address = models.TextField(null=True, blank=True)
+    city = models.CharField(max_length=255,null=True, blank=True)
+    state = models.CharField(max_length=255,null=True, blank=True)
+    pincode = models.CharField(max_length=10,null=True, blank=True)
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     profile_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
 
     def __str__(self):
-        return f"{self.username} - {self.role}"
+        return f"{self.first_name} - {self.role}"
 
     def save(self, *args, **kwargs):
         if self.password and not self.password.startswith('pbkdf2_'):
@@ -124,8 +124,6 @@ class User(models.Model):
 
     def check_password(self, raw_password):
         return check_password(raw_password, self.password)
-    
-
     
 
 class Customer(models.Model):
@@ -181,27 +179,21 @@ class CustomerShopImage(models.Model):
     def __str__(self):
         return f"{self.customer.full_name} ({self.customer.shop_name})"
     
-
-class Branch(models.Model):
-    customer = models.ForeignKey("Customer", on_delete=models.CASCADE, related_name="branches")  # ✅ link to Customer
-    gstin = models.CharField(max_length=15, db_index=True)   
-    customer_name = models.CharField(max_length=255)         
-    business_name = models.CharField(max_length=255, blank=True, null=True)  
-    address_line1 = models.TextField()
-    address_line2 = models.TextField(blank=True, null=True)
-    city = models.CharField(max_length=255, blank=True, null=True)
-    district = models.CharField(max_length=255, blank=True, null=True)
+class Vendor(models.Model):
+    name = models.CharField(max_length=255)
+    contact_person = models.CharField(max_length=255, blank=True, null=True)
+    email = models.EmailField(blank=True, null=True)
+    phone_number = models.CharField(max_length=20, blank=True, null=True)
+    address = models.TextField(blank=True, null=True)
+    gst_number = models.CharField(max_length=50, blank=True, null=True)
+    city = models.CharField(max_length=100, blank=True, null=True)
+    state = models.CharField(max_length=100, blank=True, null=True)
     pincode = models.CharField(max_length=10, blank=True, null=True)
-    state = models.CharField(max_length=255, blank=True, null=True)
-    is_head_office = models.BooleanField(default=False)      
-    nature_of_business = models.TextField(blank=True, null=True)  
-    latitude = models.CharField(max_length=50, blank=True, null=True)
-    longitude = models.CharField(max_length=50, blank=True, null=True)
-
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.business_name or self.customer_name} - {'Head Office' if self.is_head_office else 'Branch'}"
+        return self.name
+
 
 
 class Category(models.Model):
@@ -212,12 +204,29 @@ class Category(models.Model):
         return f"{self.name}"
 
 class Product(models.Model):
+    PRODUCT_TYPE_CHOICES = [
+        ('COMPONENT', 'Component'),
+        ('OLD LAPTOP', 'Old Laptop'),
+        ('REFURBISHED', 'Refurbished Laptop'),
+    ]
+
     name = models.CharField(max_length=255)
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    unit = models.CharField(max_length=50,choices=[('Pieces', 'Pieces')],default='Pieces')
+    category = models.ForeignKey('Category', on_delete=models.CASCADE)
+    product_type = models.CharField(
+        max_length=20,
+        choices=PRODUCT_TYPE_CHOICES,
+        default='REFURBISHED',
+        help_text="Defines whether this is a component, old laptop, or refurbished laptop"
+    )
+
+    unit = models.CharField(
+        max_length=50,
+        choices=[('Pieces', 'Pieces')],
+        default='Pieces'
+    )
     description = models.TextField(blank=True)
-    hsn_code = models.CharField(max_length=20)
-    gstpercentage = models.DecimalField(max_digits=5, decimal_places=2)
+    hsn_code = models.CharField(max_length=20, blank=True, null=True)
+    gstpercentage = models.DecimalField(max_digits=5, decimal_places=2, default=0)
 
     brand_name = models.CharField(
         max_length=50,
@@ -226,48 +235,114 @@ class Product(models.Model):
             ('Lenovo', 'Lenovo'),
             ('HP', 'HP'),
             ('Apple', 'Apple'),
+            ('Asus', 'Asus'),
+            ('Acer', 'Acer'),
+            ('Other', 'Other'),
         ],
         blank=True, null=True
     )
 
     model_name = models.CharField(max_length=100, blank=True, null=True)
-    product_picture = models.ImageField(upload_to='profile_pictures/', null=True, blank=True)
+    product_picture = models.ImageField(upload_to='product_images/', null=True, blank=True)
+
+    purchase_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Cost price or component purchase rate")
+    sale_price = models.DecimalField(max_digits=10, decimal_places=2, default=0, help_text="Selling price or MRP for refurbished units")
+
     created_at = models.DateTimeField(auto_now_add=True)
 
+    def __str__(self):
+        return f"{self.name} ({self.product_type})"
+
+    
+
+class PurchaseOrder(models.Model):
+    PAYMENT_STATUS_CHOICES = [
+        ('pending', 'Pending'),
+        ('partial', 'Partial'),
+        ('paid', 'Paid'),
+    ]
+
+    vendor = models.ForeignKey(Vendor, on_delete=models.CASCADE, related_name="purchase_orders")
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+    order_date = models.DateTimeField(auto_now_add=True)
+    remarks = models.TextField(blank=True, null=True)
+    is_received = models.BooleanField(default=False)
+    total_amount = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    total_paid = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+    balance_due = models.DecimalField(max_digits=12, decimal_places=2, default=0.00)
+
+    payment_status = models.CharField(max_length=50, choices=PAYMENT_STATUS_CHOICES, default='pending')
 
     def __str__(self):
-        return self.name 
+        return f"PO-{self.id} ({self.vendor.name})"
 
+class PurchaseItem(models.Model):
+    purchase_order = models.ForeignKey(PurchaseOrder, on_delete=models.CASCADE, related_name="items")
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    cost_price = models.DecimalField(max_digits=10, decimal_places=2)
+    total_price = models.DecimalField(max_digits=12, decimal_places=2)
 
-class DailyProduction(models.Model):
-    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='productions')
-    date = models.DateTimeField(auto_now_add=True)
-    stock_in = models.PositiveIntegerField(default=0)
-    stock_out = models.PositiveIntegerField(default=0)
-    current_stock = models.IntegerField(default=0)
-    serial_number = models.CharField(max_length=100)
-    refurbished_date = models.DateField()
-    sale_price = models.DecimalField(max_digits=10, decimal_places=2)
-    mrp = models.DecimalField(max_digits=10, decimal_places=2)
+    def __str__(self):
+        return f"{self.product.name} x {self.quantity}"
+    
+class Component(models.Model):
+    name = models.CharField(max_length=255)
+    description = models.TextField(blank=True, null=True)
+    unit = models.CharField(max_length=50, default='Pieces')
+    purchase_price = models.DecimalField(max_digits=10, decimal_places=2)
+    stock_quantity = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.name    
+
+class RefurbishedProduct(models.Model):
+    product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="refurbished_batches")
+    serial_number = models.CharField(max_length=100, unique=True)
+    production_date = models.DateField(default=timezone.now)
+    produced_quantity = models.PositiveIntegerField(default=0)
+    remarks = models.TextField(blank=True, null=True)
+    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True)
+
+    def __str__(self):
+        return f"{self.product.name} - SN: {self.serial_number}"
+
+class ComponentUsage(models.Model):
+    refurbished_product = models.ForeignKey(RefurbishedProduct, on_delete=models.CASCADE, related_name="components_used")
+    component = models.ForeignKey(Component, on_delete=models.CASCADE)
+    quantity_used = models.PositiveIntegerField(default=1)
 
     def save(self, *args, **kwargs):
-        # Always calculate current_stock before saving
-        self.current_stock = self.stock_in - self.stock_out
-
-        if not self.pk:  # Only check uniqueness on create
-            exists = DailyProduction.objects.filter(
-                product=self.product,
-                refurbished_date=self.refurbished_date
-            ).exists()
-            if exists:
-                raise ValidationError(
-                    f"Daily production already exists for {self.product.name} on {self.refurbished_date}, "
-                )
-
+        # Deduct used components from stock
+        if self.component.stock_quantity < self.quantity_used:
+            raise ValidationError(f"Not enough stock for {self.component.name}")
+        self.component.stock_quantity -= self.quantity_used
+        self.component.save()
         super().save(*args, **kwargs)
 
     def __str__(self):
-        return f"{self.product.name} - {self.weight_per_packet}g - {self.manufactured_date}"
+        return f"{self.component.name} x {self.quantity_used} → {self.refurbished_product.serial_number}"
+   
+
+class DailyProduction(models.Model):
+    refurbished_product = models.ForeignKey(RefurbishedProduct, on_delete=models.CASCADE, related_name='daily_productions')
+    product = models.ForeignKey(Product, on_delete=models.CASCADE)
+    refurbished_date = models.DateField(default=timezone.now)
+    stock_in = models.PositiveIntegerField(default=0)
+    stock_out = models.PositiveIntegerField(default=0)
+    current_stock = models.IntegerField(default=0)
+    sale_price = models.DecimalField(max_digits=10, decimal_places=2)
+    mrp = models.DecimalField(max_digits=10, decimal_places=2)
+    serial_number = models.CharField(max_length=100, blank=True, null=True)
+
+    def save(self, *args, **kwargs):
+        self.current_stock = self.stock_in - self.stock_out
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.product.name} ({self.serial_number or self.refurbished_product.serial_number})"
+
 
 class Inventory(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name='inventories')
@@ -285,30 +360,7 @@ class Inventory(models.Model):
         self.save()
 
 
-
-
-class Ledger(models.Model):
-    customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='ledger_entries')
-    date = models.DateTimeField(auto_now_add=True)
-    description = models.CharField(max_length=255)
-    debit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    credit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
-    balance = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0.00)
-
-    class Meta:
-        ordering = ['date']
-
-    def __str__(self):
-        return f"{self.customer.full_name} - {self.date.date()}"
-
-    def save(self, *args, **kwargs):
-        last_entry = Ledger.objects.filter(customer=self.customer).order_by('-date').first()
-        previous_balance = last_entry.balance if last_entry else 0
-        self.balance = previous_balance + self.credit - self.debit
-        super().save(*args, **kwargs)
-
-
-class Order(models.Model):
+class SalesOrder(models.Model):
     ORDER_TYPE_CHOICES = [
         ('telephone', 'Telephone'),
         ('location', 'Location'),
@@ -330,7 +382,6 @@ class Order(models.Model):
     customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='orders')
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='orders_created')
     order_date = models.DateTimeField(auto_now_add=True)
-    is_free_sample = models.BooleanField(default=False)
 
     order_type = models.CharField(max_length=20, choices=ORDER_TYPE_CHOICES, default='telephone')
 
@@ -366,8 +417,8 @@ class Order(models.Model):
 
 
 
-class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='items')
+class SaleItem(models.Model):
+    order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='items')
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
     quantity = models.PositiveIntegerField()
     price = models.DecimalField(max_digits=12, decimal_places=2)
@@ -398,7 +449,7 @@ class VoucherNumber(models.Model):
         return f"{self.name} ({self.prefix})"
 
 class PaymentTransaction(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE, related_name='transactions')
+    order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='transactions')
     received_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='received_payments')
     payment_date = models.DateTimeField(auto_now_add=True)
     amount_paid = models.DecimalField(max_digits=12, decimal_places=2)
@@ -419,7 +470,7 @@ class PaymentTransaction(models.Model):
     
 
 class Invoice(models.Model):
-    order = models.ForeignKey('Order', on_delete=models.CASCADE, related_name='invoices')
+    order = models.ForeignKey(SalesOrder, on_delete=models.CASCADE, related_name='invoices')
     invoice_number = models.CharField(max_length=50, unique=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -433,6 +484,28 @@ class Invoice(models.Model):
     def __str__(self):
         return f"Invoice {self.invoice_number}"
 
+
+
+
+class Ledger(models.Model):
+    customer = models.ForeignKey('Customer', on_delete=models.CASCADE, related_name='ledger_entries')
+    date = models.DateTimeField(auto_now_add=True)
+    description = models.CharField(max_length=255)
+    debit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    credit = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
+    balance = models.DecimalField(max_digits=10, decimal_places=2, editable=False, default=0.00)
+
+    class Meta:
+        ordering = ['date']
+
+    def __str__(self):
+        return f"{self.customer.full_name} - {self.date.date()}"
+
+    def save(self, *args, **kwargs):
+        last_entry = Ledger.objects.filter(customer=self.customer).order_by('-date').first()
+        previous_balance = last_entry.balance if last_entry else 0
+        self.balance = previous_balance + self.credit - self.debit
+        super().save(*args, **kwargs)
 
 from django.db import models
 from django.utils import timezone

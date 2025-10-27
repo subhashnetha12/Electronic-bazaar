@@ -114,53 +114,6 @@
                         </div>
 
                         <div class="col-md-6">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username"
-                                placeholder="Enter unique username"
-                                value="{{ edit_user.username|default:'' }}"
-                                required
-                                oninvalid="this.setCustomValidity('Please enter a username')"
-                                oninput="this.setCustomValidity('')">
-                        </div>
-                        {% if not edit_user %}
-                        <div class="col-md-6">
-                        <label for="password" class="form-label">Password</label>
-                        <div class="input-group">
-                            <input type="password"
-                                class="form-control"
-                                id="password"
-                                name="password"
-                                placeholder="Password"
-                                required
-                                minlength="8"
-                                pattern=".{8,}"
-                                oninvalid="this.setCustomValidity('Password must be at least 8 characters')"
-                                oninput="this.setCustomValidity('')">
-                            <button type="button" class="btn btn-outline-secondary" id="togglePassword">
-                            <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                        </div>
-                        
-                        <div class="col-md-6">
-                        <label for="confirm-password" class="form-label">Confirm Password</label>
-                        <div class="input-group">
-                            <input type="password"
-                                class="form-control"
-                                id="confirm-password"
-                                name="confirm_password"
-                                placeholder="Confirm Password"
-                                required
-                                oninvalid="this.setCustomValidity('Password do not match')"
-                                oninput="this.setCustomValidity('')">
-                            <button type="button" class="btn btn-outline-secondary" id="toggleConfirmPassword">
-                            <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                        </div>
-                        {% endif %}
-
-                        <div class="col-md-6">
                         <label for="first_name" class="form-label">First Name</label>
                         <input type="text" class="form-control" id="first_name" name="first_name"
                                 placeholder="Enter first name"
@@ -175,7 +128,6 @@
                         <input type="text" class="form-control" id="last_name" name="last_name"
                                 placeholder="Enter last name"
                                 value="{{ edit_user.last_name|default:'' }}"
-                                required
                                 oninvalid="this.setCustomValidity('Please enter last name')"
                                 oninput="this.setCustomValidity('')">
                         </div>
@@ -203,7 +155,7 @@
                         <div class="col-md-6">
                         <label for="address" class="form-label">Address</label>
                         <textarea class="form-control" id="address" name="address" rows="1"
-                                    placeholder="Enter address" required
+                                    placeholder="Enter address" 
                                     oninvalid="this.setCustomValidity('Please enter address')"
                                     oninput="this.setCustomValidity('')">{{ edit_user.address|default:'' }}</textarea>
                         </div>
@@ -211,7 +163,7 @@
                         <div class="col-md-6">
                         <label for="city" class="form-label">City</label>
                         <input type="text" class="form-control" id="city" name="city" placeholder="Enter city"
-                                value="{{ edit_user.city|default:'' }}" required
+                                value="{{ edit_user.city|default:'' }}" 
                                 oninvalid="this.setCustomValidity('Please enter city')"
                                 oninput="this.setCustomValidity('')">
                         </div>
@@ -219,7 +171,7 @@
                         <div class="col-md-6">
                         <label for="state" class="form-label">State</label>
                         <input type="text" class="form-control" id="state" name="state" placeholder="Enter state"
-                                value="{{ edit_user.state|default:'' }}" required
+                                value="{{ edit_user.state|default:'' }}" 
                                 oninvalid="this.setCustomValidity('Please enter state')"
                                 oninput="this.setCustomValidity('')">
                         </div>
@@ -227,7 +179,7 @@
                         <div class="col-md-6">
                         <label for="pincode" class="form-label">Pincode</label>
                         <input type="number" class="form-control" id="pincode" name="pincode" placeholder="Enter pincode"
-                                value="{{ edit_user.pincode|default:'' }}" required
+                                value="{{ edit_user.pincode|default:'' }}" 
                                 oninvalid="this.setCustomValidity('Please enter pincode')"
                                 oninput="this.setCustomValidity('')">
                         </div>

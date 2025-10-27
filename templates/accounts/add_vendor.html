@@ -1,0 +1,180 @@
+{% extends 'company_admin/base.html' %}
+{% block content %}
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+<style>
+    body {
+        background: linear-gradient(120deg, #fff5e6 60%, #fef2e6 100%);
+        font-family: 'Poppins', sans-serif;
+    }
+
+    .card {
+        border-radius: 1.2rem;
+        box-shadow: 0 6px 32px rgba(96, 31, 47, 0.10);
+        width: 100%;
+        max-width: 1300px;
+        margin: 0 auto;
+        border: none;
+        background: #fff;
+    }
+
+    .form-label {
+        font-weight: bold !important;
+        color: #601F2F;
+    }
+
+    .user-btn {
+        background: linear-gradient(90deg, #ffb347 0%, #601F2F 100%);
+        color: #fff;
+        border-radius: 1rem;
+        font-weight: 600;
+        font-size: 1.1rem;
+        border: none;
+        box-shadow: 0 2px 8px rgba(255, 179, 71, 0.25);
+    }
+
+    .user-btn:hover {
+        background: linear-gradient(90deg, #601F2F 0%, #ffb347 100%);
+        transform: translateY(-1px);
+    }
+
+    .gradient-title {
+        background: linear-gradient(90deg, #601F2F 10%, #ffb347 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        color: transparent;
+        font-weight: 700;
+        font-family: 'Poppins', sans-serif;
+        letter-spacing: 0.5px;
+    }
+
+    .form-control, .form-select {
+        font-size: 1rem;
+        border-radius: 0.5rem;
+        border: 1.5px solid #e2e8f0;
+        background: #fdfdfd;
+    }
+
+    .form-control:focus, .form-select:focus {
+        border-color: #ffb347;
+        box-shadow: 0 0 0 2px #ffb34733;
+    }
+
+    .input-group-text {
+        background: #fdfdfd;
+    }
+
+    label.form-label {
+        font-weight: 500;
+        letter-spacing: 0.2px;
+    }
+
+    .input-group .btn {
+        border-radius: 0 0.5rem 0.5rem 0;
+    }
+
+    .input-group input {
+        border-radius: 0.5rem 0 0 0.5rem;
+    }
+
+    @media (max-width: 991.98px) {
+        .card {
+            max-width: 98%;
+        }
+    }
+
+    @media (max-width: 575.98px) {
+        .card {
+            max-width: 100%;
+            padding: 1rem !important;
+        }
+    }
+</style>
+
+<div class="container py-2">
+    <div class="row justify-content-center">
+        <div class="col-12">
+            <div class="card p-4">
+                <h2 class="text-center mb-4 gradient-title">{% if edit_vendor %}Edit{% else %}Add{% endif %} Vendor</h2>
+
+                <form id="vendorForm" method="post"
+                    action="{% if edit_vendor %}{% url 'edit_vendor' edit_vendor.id %}{% else %}{% url 'add_vendor' %}{% endif %}">
+                    {% csrf_token %}
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Vendor Name*</label>
+                            <input type="text" class="form-control" id="name" name="name"
+                                placeholder="Enter vendor name"
+                                value="{{ edit_vendor.name|default:'' }}"
+                                required
+                                oninvalid="this.setCustomValidity('Please enter vendor name')"
+                                oninput="this.setCustomValidity('')">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="contact_person" class="form-label">Contact Person</label>
+                            <input type="text" class="form-control" id="contact_person" name="contact_person"
+                                placeholder="Enter contact person name"
+                                value="{{ edit_vendor.contact_person|default:'' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email" name="email"
+                                placeholder="Enter email address"
+                                value="{{ edit_vendor.email|default:'' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="phone_number" class="form-label">Phone Number</label>
+                            <input type="tel" class="form-control" id="phone_number" name="phone_number"
+                                placeholder="Enter phone number"
+                                value="{{ edit_vendor.phone_number|default:'' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="gst_number" class="form-label">GST Number</label>
+                            <input type="text" class="form-control" id="gst_number" name="gst_number"
+                                placeholder="Enter GST number"
+                                value="{{ edit_vendor.gst_number|default:'' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="address" class="form-label">Address</label>
+                            <textarea class="form-control" id="address" name="address" rows="1"
+                                placeholder="Enter address">{{ edit_vendor.address|default:'' }}</textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="city" class="form-label">City</label>
+                            <input type="text" class="form-control" id="city" name="city"
+                                placeholder="Enter city"
+                                value="{{ edit_vendor.city|default:'' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="state" class="form-label">State</label>
+                            <input type="text" class="form-control" id="state" name="state"
+                                placeholder="Enter state"
+                                value="{{ edit_vendor.state|default:'' }}">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label for="pincode" class="form-label">Pincode</label>
+                            <input type="text" class="form-control" id="pincode" name="pincode"
+                                placeholder="Enter pincode"
+                                value="{{ edit_vendor.pincode|default:'' }}">
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn user-btn w-100 mt-4">
+                        <i class="fas fa-{% if edit_vendor %}edit{% else %}plus{% endif %} me-2"></i>
+                        {% if edit_vendor %}Update{% else %}Add{% endif %} Vendor
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

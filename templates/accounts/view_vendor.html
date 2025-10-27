@@ -2,7 +2,7 @@
 {% extends 'company_admin/base.html' %}
 {% load static %}
 
-{% block title %}Product Details | devRasen{% endblock %}
+{% block title %}Vendor Details | devRasen{% endblock %}
 {% block content %}
 
 <style>
@@ -16,7 +16,7 @@
     --transition: all 0.3s ease;
 }
 
-.product-header {
+.vendor-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -25,7 +25,7 @@
     border-bottom: 1px solid rgba(255,179,71,0.3);
 }
 
-.product-title {
+.vendor-title {
     color: transparent;
     font-size: 28px;
     font-weight: 700;
@@ -89,10 +89,10 @@
     padding: 25px;
 }
 
-.product-image {
-    width: 120px;
-    height: 120px;
-    border-radius: 12px;
+.vendor-avatar {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
     background: linear-gradient(135deg, var(--primary-orange), var(--primary-red));
     display: flex;
     align-items: center;
@@ -100,35 +100,24 @@
     font-size: 36px;
     font-weight: bold;
     color: white;
-    /* margin-right: 25px; */
+    margin-right: 25px;
     box-shadow: 0 4px 12px rgba(96,31,47,0.2);
-    overflow: hidden;
-    margin: 0 auto 20px auto;
 }
 
-.product-image img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-}
-
-.product-profile-header {
+.vendor-profile-header {
     display: flex;
-    flex-direction: column; /* Stack items vertically */
-    align-items: center; /* Center align all items */
-    text-align: center; /* Center text */
+    align-items: center;
     margin-bottom: 25px;
 }
 
-.product-name {
+.vendor-name {
     font-size: 24px;
     font-weight: 700;
     color: var(--primary-red);
     margin-bottom: 8px;
-    text-align: center; 
 }
 
-.product-type-badge {
+.vendor-type {
     background: var(--light-orange);
     color: var(--primary-red);
     padding: 5px 15px;
@@ -137,13 +126,11 @@
     font-weight: 600;
     border: 1px solid var(--primary-orange);
     display: inline-block;
-    text-align: center; 
 }
 
 .info-item {
-    margin-top: 5px;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    margin-bottom: 12px;
+    padding-bottom: 15px;
     border-bottom: 1px dashed rgba(96,31,47,0.1);
     display: flex;
     flex-wrap: wrap;
@@ -172,31 +159,6 @@
     flex: 1;
 }
 
-.price-value {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--primary-red);
-}
-
-.gst-badge {
-    background: linear-gradient(90deg, var(--primary-orange), var(--primary-red));
-    color: white;
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.brand-badge {
-    background: var(--light-orange);
-    color: var(--primary-red);
-    padding: 4px 12px;
-    border-radius: 20px;
-    font-size: 14px;
-    font-weight: 500;
-    border: 1px solid var(--primary-orange);
-}
-
 .btn-edit {
     background: linear-gradient(90deg, var(--primary-orange), var(--primary-red));
     border: none;
@@ -223,48 +185,13 @@
     font-style: italic;
 }
 
-.description-box {
-    background: var(--light-orange);
-    padding: 15px;
-    border-radius: 8px;
-    border-left: 4px solid var(--primary-orange);
-    margin-top: 10px;
-}
-
-.price-comparison {
-    display: flex;
-    gap: 15px;
-    margin-top: 10px;
-}
-
-.price-item {
-    flex: 1;
-    text-align: center;
-    padding: 10px;
-    border-radius: 8px;
-    background: var(--light-orange);
-}
-
-.price-label {
-    font-size: 12px;
-    color: var(--primary-red);
-    font-weight: 600;
-    margin-bottom: 5px;
-}
-
-.price-amount {
-    font-size: 18px;
-    font-weight: 700;
-    color: var(--primary-red);
-}
-
 @media (max-width: 768px) {
-    .product-profile-header {
+    .vendor-profile-header {
         flex-direction: column;
         text-align: center;
     }
     
-    .product-image {
+    .vendor-avatar {
         margin-right: 0;
         margin-bottom: 20px;
     }
@@ -286,104 +213,61 @@
         min-width: auto;
         margin-right: 0;
     }
-    
-    .price-comparison {
-        flex-direction: column;
-        gap: 10px;
-    }
 }
 </style>
 
 <div class="container-fluid mt-4 mb-5">
-    <div class="product-header">
-        <h1 class="product-title">Product Details</h1>
+    <div class="vendor-header">
+        <h1 class="vendor-title">Vendor Details</h1>
         <button onclick="window.history.back()" class="close-btn">
             <i class="fas fa-arrow-left"></i> Back
         </button>
     </div>
     
     <div class="row g-4">
-        <!-- Product Overview Card -->
+        <!-- Vendor Overview Card -->
         <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
             <div class="card mb-4 flex-grow-1">
-                <div class="card-header"><i class="fas fa-cube me-2"></i>Product Overview</div>
+                <div class="card-header"><i class="fas fa-building me-2"></i>Vendor Overview</div>
                 <div class="card-body">
-                    <div class="product-profile-header">
-                        <div class="product-image">
-                            {% if product.product_picture %}
-                                <img src="{{ product.product_picture.url }}" alt="{{ product.name }}">
-                            {% else %}
-                                {{ product.name|first|upper }}
-                            {% endif %}
+                    <div class="vendor-profile-header">
+                        <div class="vendor-avatar">
+                            {{ vendor.name|first|upper }}
                         </div>
                         <div>
-                            <div class="product-name">{{ product.name }}</div>
-                            <div class="product-type-badge">{{ product.get_product_type_display }}</div>
+                            <div class="vendor-name">{{ vendor.name }}</div>
+                            <div class="vendor-type">Vendor</div>
                         </div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Product ID:</div>
-                        <div class="info-value">#{{ product.id }}</div>
                     </div>
                     
                     <div class="info-item">
                         <div class="info-label">Created Date:</div>
-                        <div class="info-value">{{ product.created_at|date:"M d, Y" }}</div>
+                        <div class="info-value">{{ vendor.created_at|date:"M d, Y" }}</div>
                     </div>
                     
                     <div class="info-item">
-                        <div class="info-label">Category:</div>
-                        <div class="info-value">
-                            <span class="brand-badge">{{ product.category.name }}</span>
-                        </div>
+                        <div class="info-label">Last Updated</div>
+                        <div class="info-value">{{ vendor.created_at|date:"M d, Y" }}</div>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Product Information Card -->
+        <!-- Contact Information Card -->
         <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
             <div class="card mb-4 flex-grow-1">
-                <div class="card-header"><i class="fas fa-info-circle me-2"></i>Product Information</div>
+                <div class="card-header"><i class="fas fa-id-card me-2"></i>Contact Information</div>
                 <div class="card-body">
                     <div class="info-item">
-                        <div class="info-label">Product Type</div>
-                        <div class="info-value">{{ product.get_product_type_display }}</div>
+                        <div class="info-label">Vendor Name</div>
+                        <div class="info-value">{{ vendor.name }}</div>
                     </div>
                     
                     <div class="info-item">
-                        <div class="info-label">Unit</div>
-                        <div class="info-value">{{ product.unit }}</div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Brand</div>
+                        <div class="info-label">Contact Person</div>
                         <div class="info-value">
-                            {% if product.brand_name %}
-                                <span class="brand-badge">{{ product.brand_name }}</span>
-                            {% else %}
-                                <span class="empty-field">Not specified</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">Model</div>
-                        <div class="info-value">
-                            {% if product.model_name %}
-                                {{ product.model_name }}
-                            {% else %}
-                                <span class="empty-field">Not specified</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                    
-                    <div class="info-item">
-                        <div class="info-label">HSN Code</div>
-                        <div class="info-value">
-                            {% if product.hsn_code %}
-                                {{ product.hsn_code }}
+                            {% if vendor.contact_person %}
+                                {{ vendor.contact_person }}
                             {% else %}
                                 <span class="empty-field">Not provided</span>
                             {% endif %}
@@ -391,12 +275,34 @@
                     </div>
                     
                     <div class="info-item">
-                        <div class="info-label">GST Percentage</div>
+                        <div class="info-label">Email Address</div>
                         <div class="info-value">
-                            {% if product.gstpercentage %}
-                                <span class="gst-badge">{{ product.gstpercentage }}%</span>
+                            {% if vendor.email %}
+                                {{ vendor.email }}
                             {% else %}
-                                <span class="empty-field">Not set</span>
+                                <span class="empty-field">Not provided</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Phone Number</div>
+                        <div class="info-value">
+                            {% if vendor.phone_number %}
+                                {{ vendor.phone_number }}
+                            {% else %}
+                                <span class="empty-field">Not provided</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">GST Number</div>
+                        <div class="info-value">
+                            {% if vendor.gst_number %}
+                                {{ vendor.gst_number }}
+                            {% else %}
+                                <span class="empty-field">Not provided</span>
                             {% endif %}
                         </div>
                     </div>
@@ -404,43 +310,51 @@
             </div>
         </div>
 
-        <!-- Pricing & Description Card -->
+        <!-- Address Information Card -->
         <div class="col-lg-4 col-md-6 col-sm-12 d-flex">
             <div class="card mb-4 flex-grow-1">
-                <div class="card-header"><i class="fas fa-tag me-2"></i>Pricing & Description</div>
+                <div class="card-header"><i class="fas fa-map-marker-alt me-2"></i> Address Information</div>
                 <div class="card-body">
-                    <div class="price-comparison">
-                        <div class="price-item">
-                            <div class="price-label">Purchase Price</div>
-                            <div class="price-amount">₹{{ product.purchase_price }}</div>
-                        </div>
-                        <div class="price-item">
-                            <div class="price-label">Sale Price</div>
-                            <div class="price-amount">₹{{ product.sale_price }}</div>
-                        </div>
-                    </div>
-                    
                     <div class="info-item">
-                        <div class="info-label">Profit Margin</div>
+                        <div class="info-label">Street Address</div>
                         <div class="info-value">
-                            {% if product.purchase_price and product.sale_price %}
-                                {% widthratio product.sale_price|floatformat:2 product.purchase_price|floatformat:2 100 as margin %}
-                                <span class="gst-badge">{{ margin|add:"-100" }}%</span>
+                            {% if vendor.address %}
+                                {{ vendor.address }}
                             {% else %}
-                                <span class="empty-field">N/A</span>
+                                <span class="empty-field">Not provided</span>
                             {% endif %}
                         </div>
                     </div>
                     
-                    <div class="info-item" style="flex-direction: column;">
-                        <div class="info-label">Description</div>
+                    <div class="info-item">
+                        <div class="info-label">City</div>
                         <div class="info-value">
-                            {% if product.description %}
-                                <div class="description-box">
-                                    {{ product.description|linebreaks }}
-                                </div>
+                            {% if vendor.city %}
+                                {{ vendor.city }}
                             {% else %}
-                                <span class="empty-field">No description provided</span>
+                                <span class="empty-field">Not provided</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">State/Province</div>
+                        <div class="info-value">
+                            {% if vendor.state %}
+                                {{ vendor.state }}
+                            {% else %}
+                                <span class="empty-field">Not provided</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="info-item">
+                        <div class="info-label">Postal Code</div>
+                        <div class="info-value">
+                            {% if vendor.pincode %}
+                                {{ vendor.pincode }}
+                            {% else %}
+                                <span class="empty-field">Not provided</span>
                             {% endif %}
                         </div>
                     </div>
@@ -450,9 +364,9 @@
     </div>
     
     <div class="d-flex justify-content-end mt-4">
-        {% if role_permission.all_products_e %}
-        <a href="{% url 'edit_product' product.id %}" class="btn btn-edit">
-            <i class="fas fa-edit"></i> Edit Product
+        {% if role_permission.users_e %}
+        <a href="{% url 'edit_vendor' vendor.id %}" class="btn btn-edit">
+            <i class="fas fa-edit"></i> Edit Vendor
         </a>
         {% endif %}
     </div>
